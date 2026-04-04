@@ -1,0 +1,29 @@
+---
+description: Rules for translating Little Fighter GRH graphics
+globs: ["SYS/*.GRH", "debug/*.py", "debug/*.png"]
+---
+
+# Little Fighter Translation Rules
+
+## Font
+Always use **Px437 IBM VGA 8x14** (`~/Library/Fonts/Px437_IBM_VGA_8x14.ttf`) at 16pt for all GRH text translations. Do NOT use Perfect DOS VGA 437.
+
+## GRH Workflow
+- Always start from the git original when making changes: `git show HEAD:SYS/<file>.GRH`
+- Preserve the original `debug/<name>.png` — never overwrite it
+- Write translated previews to `debug/<name>_translated.png`
+- Only clear pixels matching the text color index being replaced — don't damage surrounding graphics
+- Use the correct background palette index for each image region when clearing text
+
+## Palette
+- PAL file at `SYS/PAL` — 256 colors, VGA 6-bit (multiply by 4 for 8-bit RGB)
+- Green text: palette index 15 `(0, 252, 0)`
+- Blue background: palette index 0 `(0, 0, 252)` or indices 107/108/109 depending on image
+- Pink/lavender outline: palette index 8 `(200, 200, 252)`
+- Dark table background: palette index 98 `(0, 88, 24)` or index 34 `(108, 0, 0)`
+
+## GRH Format
+- Bytes 0-1: width (big-endian uint16)
+- Bytes 2-3: height (big-endian uint16)
+- Bytes 4-299: zero padding
+- Bytes 300+: raw 8-bit pixel data (1 byte per pixel, palette indexed)

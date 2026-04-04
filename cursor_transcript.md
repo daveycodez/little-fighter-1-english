@@ -275,7 +275,7 @@ So the workflow is: **export** a GRH to PNG, edit the PNG in any image editor (j
 
 **User**
 
-ok so now i have Perfect DOS VGA 437
+ok so now i have Px437 IBM VGA 8x14
 
 font installed, so you can do each string individually. Let's start over, do ONLY the cpu difficulty strings to start.
 
@@ -287,7 +287,7 @@ Found it. Let me start fresh — restore the original CWORD.GRH from the saved P
 
 Good data. The Chinese labels are 87x14 pixels. Font size 16 gives 72x13 — close match. Let me render just those three strings cleanly.
 
-That's the Perfect DOS VGA 437 font — crisp, bold, and perfectly aligned with the Player rows. The three CPU strings line up exactly:
+That's the Px437 IBM VGA 8x14 font — crisp, bold, and perfectly aligned with the Player rows. The three CPU strings line up exactly:
 
 - **CPU:High** aligned with Player 4 / Player 8
 - **CPU:Mid** aligned with Player 5 / Player 9
@@ -1030,32 +1030,6 @@ Fixed. The Solo numbers row is preserved, and the first team row (y=74-87) is no
 
 **User**
 
-try a slightly smaller font, like 1pt smaller
-
----
-
-**Cursor**
-
-Done. First team row now rendered at 15pt instead of 16pt. GRH updated — check the preview.
-
----
-
-**User**
-
-is it possible to do 15.5pt
-
----
-
-**Cursor**
-
-Worth a shot — Pillow does accept float sizes.
-
-Done. Team row now at 15.5pt. GRH updated — check the preview. Though with a bitmap font like Perfect DOS VGA 437, half-point differences may round to the same result.
-
----
-
-**User**
-
 Let's try 2 Teams (2/Team) ?
 
 ---
@@ -1063,55 +1037,6 @@ Let's try 2 Teams (2/Team) ?
 **Cursor**
 
 Done. Now reads "2 Teams (2/Team)" at full 16pt. GRH updated — check the preview.
-
----
-
-**User**
-
-can you try 15pt again
-
----
-
-**Cursor**
-
-Done. "2 Teams (2/Team)" at 15pt. GRH updated — check the preview.
-
----
-
-**User**
-
-ok 15.25pt
-
----
-
-**Cursor**
-
-Done. "2 Teams (2/Team)" at 15.25pt. GRH updated — check the preview. Though at this pixel scale, the bitmap font likely snaps to the same grid as 15pt.
-
----
-
-**User**
-
-ehh try 15.5pt
-
----
-
-**Cursor**
-
-Done. "2 Teams (2/Team)" at 15.5pt. GRH updated — check the preview.
-
----
-
-**User**
-
-try 2 Teams (2)
-16pt
-
----
-
-**Cursor**
-
-Done. "2 Teams (2)" at 16pt. GRH updated — check the preview.
 
 ---
 

@@ -89,22 +89,43 @@ class Asm16:
 
     # -- indirect reg access --
     def mov_al_si_ind(self):   self._emit(0x8A, 0x04)   # MOV AL, [SI]
+    def mov_al_di_ind(self):   self._emit(0x8A, 0x05)   # MOV AL, [DI]
     def cmp_al_di_ind(self):   self._emit(0x3A, 0x05)   # CMP AL, [DI]
     def cmp_byte_bx_imm(self, v): self._emit(0x80, 0x3F, v & 0xFF)  # CMP byte [BX], v
+    def cmp_byte_di_ind_imm(self, v): self._emit(0x80, 0x3D, v & 0xFF)  # CMP byte [DI], v
 
     # -- ALU --
     def cmp_al_imm(self, v):   self._emit(0x3C, v & 0xFF)
+    def sub_al_imm(self, v):   self._emit(0x2C, v & 0xFF)
     def sub_ax_dx(self):       self._emit(0x29, 0xD0)
+    def cmp_ax_imm(self, v):   self._emit(0x3D); self._word(v)
     def xor_r8(self, r):
         c = self.REGS8[r]; self._emit(0x30, 0xC0 | (c << 3) | c)
     def xor_r16(self, r):
         c = self.REGS16[r]; self._emit(0x31, 0xC0 | (c << 3) | c)
+    def add_rr16(self, dst, src):
+        self._emit(0x01, 0xC0 | (self.REGS16[src] << 3) | self.REGS16[dst])
+    def or_rr16(self, dst, src):
+        self._emit(0x09, 0xC0 | (self.REGS16[src] << 3) | self.REGS16[dst])
+    def cbw(self):             self._emit(0x98)
+    def mul_bl(self):          self._emit(0xF6, 0xE3)   # AX = AL * BL
+    def div_bx(self):          self._emit(0xF7, 0xF3)   # AX = DX:AX / BX
+
+    # -- misc --
+    def lodsb(self):           self._emit(0xAC)
+    def lodsw(self):           self._emit(0xAD)
+
+    def mov_mem16_imm(self, l, v):
+        self._emit(0xC7, 0x06); self._fixup('abs16', l); self._word(0); self._word(v)
 
     # -- jumps --
     def _jcc8(self, op, l):    self._emit(op); self._fixup('rel8', l); self._emit(0)
     def jc(self, l):           self._jcc8(0x72, l)
+    def jb(self, l):           self._jcc8(0x72, l)
     def je(self, l):           self._jcc8(0x74, l)
     def jne(self, l):          self._jcc8(0x75, l)
+    def jnz(self, l):          self._jcc8(0x75, l)
+    def ja(self, l):           self._jcc8(0x77, l)
     def jl(self, l):           self._jcc8(0x7C, l)
     def jmp(self, l):          self._jcc8(0xEB, l)
     def jcxz(self, l):         self._jcc8(0xE3, l)
@@ -201,6 +222,10 @@ def build_mods_com():
     a.mov_r16_label('si', 'str_all_weapons')
     a.call('search')
     a.mov_mem_al('flag_all_weapons')
+
+    a.mov_r16_label('si', 'str_speed_hack')
+    a.call('search')
+    a.mov_mem_al('flag_speed_hack')
 
     # -- compute spawn rate value --
     a.mov_r16_imm('ax', 0x012C)        # default = 300
@@ -341,12 +366,21 @@ def build_mods_com():
     a.mov_r8_imm('bl', 2)
     a.call('apply_patch')
 
-    # all_weapons=1: type count 10→11 at 0xBE6F (same pool as F1+minus cheat)
+    # all_weapons=1: type count 10→12 at 0xBE6F
     a.mov_al_mem('flag_all_weapons')
     a.mov_r16_imm('cx', 0x0000)
     a.mov_r16_imm('dx', 0xBE6F)
     a.mov_r16_label('si', 'wtype_all')
     a.mov_r16_label('di', 'wtype_orig')
+    a.mov_r8_imm('bl', 1)
+    a.call('apply_patch')
+
+    # speed_hack=1: skip retrace wait (EB→CB at 0x22435, RETF instead of JMP)
+    a.mov_al_mem('flag_speed_hack')
+    a.mov_r16_imm('cx', 0x0002)
+    a.mov_r16_imm('dx', 0x2435)
+    a.mov_r16_label('si', 'retf_byte')
+    a.mov_r16_label('di', 'jmp_short_byte')
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
@@ -449,6 +483,7 @@ def build_mods_com():
     a.label('str_spawn_w2'); a.db("spawn_weapons=2\x00")
     a.label('str_spawn_w3'); a.db("spawn_weapons=3\x00")
     a.label('str_all_weapons');a.db("all_weapons=1\x00")
+    a.label('str_speed_hack');a.db("speed_hack=1\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
     a.label('julian_off');   a.db(0x74, 0x06)
     a.label('nops');         a.db(0x90, 0x90, 0x90, 0x90, 0x90)
@@ -469,12 +504,18 @@ def build_mods_com():
     a.label('flag_spawn_w2');a.db(0)
     a.label('flag_spawn_w3');a.db(0)
     a.label('flag_all_weapons'); a.db(0)
+    a.label('flag_speed_hack'); a.db(0)
     a.label('rate_value');   a.dw(0x012C)
     a.label('cur_handle');   a.dw(0)
     a.label('bytes_read');   a.dw(0)
+
+    a.label('retf_byte');     a.db(0xCB)    # RETF (skip retrace wait)
+    a.label('jmp_short_byte');a.db(0xEB)   # original JMP SHORT at 0x22435
+
     a.label('read_buffer')
 
-    return a.build()
+    a.resolve()
+    return bytes(a.buf)
 
 
 # ---------------------------------------------------------------------------
@@ -497,13 +538,6 @@ def patch_play_com():
         print(f"  PLAY.COM entry point unexpected ({data[0x305]:02x}{data[0x306]:02x}), skipping")
         return False
 
-    # Append: "MODS\0" + code to EXEC it, then JMP to original entry
-    #   file 0x46B (mem 0x56B): "MODS\0"
-    #   file 0x470 (mem 0x570): LEA SI, [BP+0166h]  -> "MODS" string
-    #   file 0x474 (mem 0x574): LEA DI, [BP+003Dh]  -> empty command tail
-    #   file 0x478 (mem 0x578): MOV AX, 0223h       -> EXEC function
-    #   file 0x47B (mem 0x57B): CALL AX
-    #   file 0x47D (mem 0x57D): JMP 0491h            -> original entry
     patch = bytearray()
     patch += b"MODS\x00"
     patch += bytes([0x8D, 0xB6, 0x66, 0x01])   # LEA SI, [BP+0166h]
@@ -514,8 +548,6 @@ def patch_play_com():
     assert len(patch) == 21
 
     data.extend(patch)
-
-    # Redirect entry point: [BP+00h] = 0x0570 (the LEA SI instruction)
     data[0x305] = 0x70
     data[0x306] = 0x05
 

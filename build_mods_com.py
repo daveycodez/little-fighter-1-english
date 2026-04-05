@@ -410,7 +410,6 @@ def build_mods_com():
         ('C', 0x0000, 0x99E0),   # combo C handler at file offset 0x99E0
         ('D', 0x0000, 0x9A9C),   # combo D handler at file offset 0x9A9C
         ('E', 0x0000, 0x9B38),   # combo E handler at file offset 0x9B38
-        ('H', 0x0000, 0x9C14),   # combo H handler at file offset 0x9C14
     ]:
         a.mov_al_mem('flag_easy_supers')
         a.mov_r16_imm('cx', cx_hi)
@@ -419,6 +418,14 @@ def build_mods_com():
         a.mov_r16_label('di', f'combo_{label_suffix}_orig')
         a.mov_r8_imm('bl', 86)
         a.call('apply_patch')
+    # Handler H: 139 bytes (proper weapon flag check + summon/attack dual-path)
+    a.mov_al_mem('flag_easy_supers')
+    a.mov_r16_imm('cx', 0x0000)
+    a.mov_r16_imm('dx', 0x9C14)
+    a.mov_r16_label('si', 'easy_super_H')
+    a.mov_r16_label('di', 'combo_H_orig')
+    a.mov_r8_imm('bl', 139)
+    a.call('apply_patch')
 
     a.mov_bx_mem('cur_handle')
     a.mov_r8_imm('ah', 0x3E)
@@ -611,13 +618,95 @@ def build_mods_com():
     ]
     # CALL NEAR E8 displacement: target(0x7958) - (handler_code + 69)
     for suffix, file_off in [('A',0x9868),('B',0x9924),('C',0x99E0),
-                              ('D',0x9A9C),('E',0x9B38),('H',0x9C14)]:
+                              ('D',0x9A9C),('E',0x9B38)]:
         code_off = file_off - 0x1400
         disp = (0x7958 - (code_off + 69)) & 0xFFFF
         a.label(f'easy_super_{suffix}')
         a.db(*easy_super_prefix)
         a.db(0xE8, disp & 0xFF, (disp >> 8) & 0xFF)  # 66: call near execute_super
         a.db(*easy_super_suffix)
+
+    # Handler H: 139-byte version for Deep's weapon summon (combo type H).
+    # The game has TWO mechanisms for the → ← → A combo:
+    #   1. State-5 handler (IP 0xEF72): no weapon → sets field_0x3414=3600
+    #      (state 36) which creates the sword entity
+    #   2. Handler H (combo dispatcher): weapon exists → calls execute_super
+    #      (state 2100/DI=21) for weapon attack animation
+    # Our handler replicates both paths. We use the game's own weapon flag
+    # check: follow field_0x3410 → linked entity → char_type → weapon_data
+    # table at [char_type*0x12 + 0x2F1A] to determine if a weapon exists.
+    code_off_H = 0x9C14 - 0x1400
+    disp_H = (0x7958 - (code_off_H + 122)) & 0xFFFF
+    easy_super_H = [
+         0x55,                               # 0:  push bp
+         0x8B, 0xEC,                         # 1:  mov bp, sp
+         0x56,                               # 3:  push si
+         0x57,                               # 4:  push di
+         0x8B, 0x76, 0x06,                   # 5:  mov si, [bp+6]  (entity index)
+         0x8B, 0x7E, 0x08,                   # 8:  mov di, [bp+8]  (super index)
+         0x83, 0xFE, 0x03,                   # 11: cmp si, 3
+         0x7D, 0x6E,                         # 14: jge done  (+110 → byte 126)
+         0xEB, 0x04,                         # 16: jmp short past_reloc → byte 22
+         0x00, 0x00,                         # 18: padding
+         0x00, 0x00,                         # 20: relocation target
+         0x8B, 0xC6,                         # 22: mov ax, si
+         0xBA, 0x34, 0x00,                   # 24: mov dx, 0x34
+         0xF7, 0xEA,                         # 27: imul dx
+         0x8B, 0xD8,                         # 29: mov bx, ax
+         0x8A, 0x87, 0x04, 0x34,             # 31: mov al, [bx+0x3404]  (control slot)
+         0xB3, 0x03,                         # 35: mov bl, 3
+         0xF6, 0xE3,                         # 37: mul bl
+         0x03, 0xC7,                         # 39: add ax, di
+         0xE8, 0x00, 0x00,                   # 41: call $+3  (PIC)
+         0x5B,                               # 44: pop bx
+         0x83, 0xC3, 0x56,                   # 45: add bx, 86  (bx → table@130)
+         0x2E, 0xD7,                         # 48: cs xlatb
+         0x30, 0xE4,                         # 50: xor ah, ah
+         0x8B, 0xD8,                         # 52: mov bx, ax
+         0xD1, 0xE3,                         # 54: shl bx, 1
+         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 56: cmp word [bx+0x2E6Eh], 0
+         0x74, 0x3F,                         # 61: jz done  (+63 → byte 126)
+         # Key pressed → compute entity offset
+         0x8B, 0xC6,                         # 63: mov ax, si
+         0xBA, 0x34, 0x00,                   # 65: mov dx, 0x34
+         0xF7, 0xEA,                         # 68: imul dx
+         0x8B, 0xD8,                         # 70: mov bx, ax
+         # Weapon flag check (replicates game logic at IP 0xEF3A):
+         # linked_entity → char_type → weapon_data[char_type].flag
+         0x53,                               # 72: push bx  (save entity offset)
+         0x8B, 0x87, 0x10, 0x34,             # 73: mov ax, [bx+0x3410]  (linked entity)
+         0xBA, 0x34, 0x00,                   # 77: mov dx, 0x34
+         0xF7, 0xEA,                         # 80: imul dx
+         0x8B, 0xD8,                         # 82: mov bx, ax
+         0x8B, 0x87, 0x18, 0x34,             # 84: mov ax, [bx+0x3418]  (char_type)
+         0xBA, 0x12, 0x00,                   # 88: mov dx, 0x12
+         0xF7, 0xEA,                         # 91: imul dx
+         0x8B, 0xD8,                         # 93: mov bx, ax
+         0x83, 0xBF, 0x1A, 0x2F, 0x01,      # 95: cmp word [bx+0x2F1A], 1
+         0x5B,                               # 100: pop bx  (restore entity offset)
+         0x74, 0x0D,                         # 101: jz has_weapon  (+13 → byte 116)
+         # No weapon → SUMMON: deduct MP, set state 3600 (DI=36 creates sword)
+         0x83, 0xAF, 0x20, 0x34, 0x32,      # 103: sub word [bx+0x3420], 50
+         0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E, # 108: mov word [bx+0x3414], 0x0E10
+         0xEB, 0x0A,                         # 114: jmp short done  (+10 → byte 126)
+         # has_weapon → WEAPON ATTACK via execute_super (DI=21 animation)
+         0x57,                               # 116: push di
+         0x56,                               # 117: push si
+         0x0E,                               # 118: push cs
+         0xE8, disp_H & 0xFF, (disp_H >> 8) & 0xFF,  # 119: call near execute_super
+         0x90, 0x90,                         # 122: nop nop
+         0x59,                               # 124: pop cx
+         0x59,                               # 125: pop cx
+         0x5F,                               # 126: pop di   ← done:
+         0x5E,                               # 127: pop si
+         0x5D,                               # 128: pop bp
+         0xCB,                               # 129: retf
+         0x10, 0x12, 0x2C,                   # 130: table P1: Q  E  Z
+         0x16, 0x18, 0x32,                   # 133: table P2: U  O  M
+         0x47, 0x49, 0x4F,                   # 136: table P3: 7  9  1
+    ]
+    a.label('easy_super_H')
+    a.db(*easy_super_H)
 
     # Original first 86 bytes of each combo handler (for restoration)
     a.label('combo_A_orig')
@@ -679,7 +768,14 @@ def build_mods_com():
          0xC6, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x83, 0xBF,
          0x02, 0x34, 0x01, 0x75, 0x70, 0x8B, 0xC6, 0xBA, 0x05,
          0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x80,
-         0xBF, 0x2F, 0x4D, 0x73, 0x75, 0x5E, 0x8B, 0xC6, 0xBA, 0x05, 0x00)
+         0xBF, 0x2F, 0x4D, 0x73, 0x75, 0x5E, 0x8B, 0xC6, 0xBA, 0x05, 0x00,
+         0xF7, 0xEA, 0x8B, 0xD8, 0x80, 0xBF, 0x2E, 0x4D, 0x64, 0x75,
+         0x4E, 0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7, 0xEA, 0x8B, 0xD8,
+         0x80, 0xBF, 0x2D, 0x4D,
+         0x61, 0x75, 0x3E, 0x8B, 0xC6,
+         0xBA, 0x05, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x80, 0xBF, 0x2C,
+         0x4D, 0x64, 0x75, 0x2E, 0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7,
+         0xEA, 0x8B, 0xD8, 0x8B)
 
     a.label('read_buffer')
 

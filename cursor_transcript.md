@@ -75,7 +75,7 @@ Look, I see the png's you made, make sure you put these into a separate folder u
 
 **Cursor**
 
-Done — moved all the PNGs into `LitFight/debug/`. Now let me continue figuring out the menu translation.
+Done — moved all the PNGs into `/export/`. Now let me continue figuring out the menu translation.
 
 The Big5 string extraction from the executable was mostly gibberish (code bytes misinterpreted as Chinese). The menu text is actually rendered at runtime using the `NEWFONTS` bitmap font, and the Chinese characters to draw are likely referenced by index in the `WORDS` file. Let me take a screenshot of the actual game title screen to see exactly what the first menu option says.
 
@@ -91,7 +91,7 @@ Try main.grh and extract it
 
 **Cursor**
 
-The MAIN.GRH was already extracted earlier. Let me show it to you from the debug folder.
+The MAIN.GRH was already extracted earlier. Let me show it to you from the export folder.
 
 There it is — the title screen from `MAIN.GRH`. It shows:
 
@@ -111,7 +111,7 @@ make sure you organize rthe pngs for each grh file properly dude
 
 **Cursor**
 
-All 44 GRH files are now cleanly exported as PNGs in the `debug/` folder, one-to-one with their source names. No stray files in the root anymore.
+All 44 GRH files are now cleanly exported as PNGs in the `export/` folder, one-to-one with their source names. No stray files in the root anymore.
 
 ---
 
@@ -256,17 +256,17 @@ ok but like did you use a script?
 
 No permanent script — I was running one-off Python snippets inline each time. Let me create a proper reusable tool you can keep.
 
-Now you have `debug/grh_tool.py`. Usage:
+Now you have `export/grh_tool.py`. Usage:
 
 ```bash
 # Export one GRH to PNG
-python3 debug/grh_tool.py export SYS/CWORD.GRH debug/CWORD.png
+python3 export/grh_tool.py export SYS/CWORD.GRH export/CWORD.png
 
 # Import a PNG back to GRH
-python3 debug/grh_tool.py import debug/CWORD.png SYS/CWORD.GRH
+python3 export/grh_tool.py import export/CWORD.png SYS/CWORD.GRH
 
 # Export all GRH files at once
-python3 debug/grh_tool.py exportall
+python3 export/grh_tool.py exportall
 ```
 
 So the workflow is: **export** a GRH to PNG, edit the PNG in any image editor (just stick to the 256 palette colors), then **import** it back. The tool handles the 300-byte header and VGA palette mapping automatically.
@@ -419,7 +419,7 @@ Move the l in normal to the left by 1px and move CPU:Hard to the right 1px
 
 **Cursor**
 
-Done. The "l" in "CPU:Normal" has been kerned 1px to the left, and "CPU:Hard" has been shifted 1px to the right. The GRH file is updated. Check the preview at `debug/CWORD_translated.png` or the zoomed version at `debug/CWORD_translated_zoomed.png`.
+Done. The "l" in "CPU:Normal" has been kerned 1px to the left, and "CPU:Hard" has been shifted 1px to the right. The GRH file is updated. Check the preview at `export/CWORD_translated.png` or the zoomed version at `export/CWORD_translated_zoomed.png`.
 
 ---
 
@@ -584,8 +584,8 @@ Using `exec` replaces the shell process with `open`, so once it dispatches DOSBo
 **User**
 
 Last login: Sat Apr  4 04:42:29 on ttys013
-/Users/david/Downloads/LitFight/Play\ Little\ Fighter.command ; exit;           
-david@Davids-MacBook-Pro ~ % /Users/david/Downloads/LitFight/Play\ Little\ Fighter.command ; exit;
+/Users/david/Downloads//Play\ Little\ Fighter.command ; exit;           
+david@Davids-MacBook-Pro ~ % /Users/david/Downloads//Play\ Little\ Fighter.command ; exit;
 
 Saving session...
 ...copying shared history...

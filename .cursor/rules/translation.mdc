@@ -1,6 +1,6 @@
 ---
 description: Rules for translating Little Fighter GRH graphics
-globs: ["SYS/*.GRH", "debug/*.py", "debug/*.png"]
+globs: ["SYS/*.GRH", "export/*.py", "export/*.png"]
 ---
 
 # Little Fighter Translation Rules
@@ -10,8 +10,8 @@ Always use **Px437 IBM VGA 8x14** (`~/Library/Fonts/Px437_IBM_VGA_8x14.ttf`) at 
 
 ## GRH Workflow
 - Always start from the git original when making changes: `git show HEAD:SYS/<file>.GRH`
-- Preserve the original `debug/<name>.png` — never overwrite it
-- Write translated previews to `debug/<name>_translated.png`
+- Preserve the original `export/<name>.png` — never overwrite it
+- Write translated previews to `export/<name>_translated.png`
 - Only clear pixels matching the text color index being replaced — don't damage surrounding graphics
 - Use the correct background palette index for each image region when clearing text
 

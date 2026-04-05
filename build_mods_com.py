@@ -227,6 +227,10 @@ def build_mods_com():
     a.call('search')
     a.mov_mem_al('flag_speed_hack')
 
+    a.mov_r16_label('si', 'str_fast_mp')
+    a.call('search')
+    a.mov_mem_al('flag_fast_mp')
+
     # -- compute spawn rate value --
     a.mov_r16_imm('ax', 0x012C)        # default = 300
     a.mov_mem_ax('rate_value')
@@ -375,6 +379,15 @@ def build_mods_com():
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
+    # fast_mp=1: double MP recovery (ADD 2 instead of INC at 0x1571E, 13 bytes)
+    a.mov_al_mem('flag_fast_mp')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x571E)
+    a.mov_r16_label('si', 'fast_mp_on')
+    a.mov_r16_label('di', 'fast_mp_off')
+    a.mov_r8_imm('bl', 13)
+    a.call('apply_patch')
+
     # speed_hack=1: skip retrace wait (EB→CB at 0x22435, RETF instead of JMP)
     a.mov_al_mem('flag_speed_hack')
     a.mov_r16_imm('cx', 0x0002)
@@ -484,6 +497,7 @@ def build_mods_com():
     a.label('str_spawn_w3'); a.db("spawn_weapons=3\x00")
     a.label('str_all_weapons');a.db("all_weapons=1\x00")
     a.label('str_speed_hack');a.db("speed_hack=1\x00")
+    a.label('str_fast_mp'); a.db("fast_mp=1\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
     a.label('julian_off');   a.db(0x74, 0x06)
     a.label('nops');         a.db(0x90, 0x90, 0x90, 0x90, 0x90)
@@ -505,10 +519,13 @@ def build_mods_com():
     a.label('flag_spawn_w3');a.db(0)
     a.label('flag_all_weapons'); a.db(0)
     a.label('flag_speed_hack'); a.db(0)
+    a.label('flag_fast_mp'); a.db(0)
     a.label('rate_value');   a.dw(0x012C)
     a.label('cur_handle');   a.dw(0)
     a.label('bytes_read');   a.dw(0)
 
+    a.label('fast_mp_on');     a.db(0x8B, 0xC6, 0xB2, 0x34, 0xF7, 0xEA, 0x8B, 0xD8, 0x83, 0x87, 0x20, 0x34, 0x02)
+    a.label('fast_mp_off');   a.db(0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0xFF, 0x87, 0x20, 0x34)
     a.label('retf_byte');     a.db(0xCB)    # RETF (skip retrace wait)
     a.label('jmp_short_byte');a.db(0xEB)   # original JMP SHORT at 0x22435
 

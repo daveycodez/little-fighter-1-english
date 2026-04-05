@@ -627,16 +627,13 @@ def build_mods_com():
         a.db(*easy_super_suffix)
 
     # Handler H: 139-byte version for Deep's weapon summon (combo type H).
-    # The game has TWO mechanisms for the → ← → A combo:
-    #   1. State-5 handler (IP 0xEF72): no weapon → sets field_0x3414=3600
-    #      (state 36) which creates the sword entity
-    #   2. Handler H (combo dispatcher): weapon exists → calls execute_super
-    #      (state 2100/DI=21) for weapon attack animation
-    # Our handler replicates both paths. We use the game's own weapon flag
-    # check: follow field_0x3410 → linked entity → char_type → weapon_data
-    # table at [char_type*0x12 + 0x2F1A] to determine if a weapon exists.
+    # Uses animation state check (field_0x3414 / 50 == 5) to determine weapon
+    # status, matching the game's own state-5 handler logic. State 5 means
+    # "idle holding weapon" → weapon attack. Any other state → summon sword.
+    # The old [bx+0x2F1A] weapon-data-table check stayed set after throwing,
+    # preventing re-summon. The state check correctly resets when not holding.
     code_off_H = 0x9C14 - 0x1400
-    disp_H = (0x7958 - (code_off_H + 122)) & 0xFFFF
+    disp_H = (0x7958 - (code_off_H + 108)) & 0xFFFF
     easy_super_H = [
          0x55,                               # 0:  push bp
          0x8B, 0xEC,                         # 1:  mov bp, sp
@@ -645,7 +642,7 @@ def build_mods_com():
          0x8B, 0x76, 0x06,                   # 5:  mov si, [bp+6]  (entity index)
          0x8B, 0x7E, 0x08,                   # 8:  mov di, [bp+8]  (super index)
          0x83, 0xFE, 0x03,                   # 11: cmp si, 3
-         0x7D, 0x6E,                         # 14: jge done  (+110 → byte 126)
+         0x7D, 0x60,                         # 14: jge done  (+96 → byte 112)
          0xEB, 0x04,                         # 16: jmp short past_reloc → byte 22
          0x00, 0x00,                         # 18: padding
          0x00, 0x00,                         # 20: relocation target
@@ -665,42 +662,41 @@ def build_mods_com():
          0x8B, 0xD8,                         # 52: mov bx, ax
          0xD1, 0xE3,                         # 54: shl bx, 1
          0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 56: cmp word [bx+0x2E6Eh], 0
-         0x74, 0x3F,                         # 61: jz done  (+63 → byte 126)
+         0x74, 0x31,                         # 61: jz done  (+49 → byte 112)
          # Key pressed → compute entity offset
          0x8B, 0xC6,                         # 63: mov ax, si
          0xBA, 0x34, 0x00,                   # 65: mov dx, 0x34
          0xF7, 0xEA,                         # 68: imul dx
          0x8B, 0xD8,                         # 70: mov bx, ax
-         # Weapon flag check (replicates game logic at IP 0xEF3A):
-         # linked_entity → char_type → weapon_data[char_type].flag
-         0x53,                               # 72: push bx  (save entity offset)
-         0x8B, 0x87, 0x10, 0x34,             # 73: mov ax, [bx+0x3410]  (linked entity)
-         0xBA, 0x34, 0x00,                   # 77: mov dx, 0x34
-         0xF7, 0xEA,                         # 80: imul dx
-         0x8B, 0xD8,                         # 82: mov bx, ax
-         0x8B, 0x87, 0x18, 0x34,             # 84: mov ax, [bx+0x3418]  (char_type)
-         0xBA, 0x12, 0x00,                   # 88: mov dx, 0x12
-         0xF7, 0xEA,                         # 91: imul dx
-         0x8B, 0xD8,                         # 93: mov bx, ax
-         0x83, 0xBF, 0x1A, 0x2F, 0x01,      # 95: cmp word [bx+0x2F1A], 1
-         0x5B,                               # 100: pop bx  (restore entity offset)
-         0x74, 0x0D,                         # 101: jz has_weapon  (+13 → byte 116)
-         # No weapon → SUMMON: deduct MP, set state 3600 (DI=36 creates sword)
-         0x83, 0xAF, 0x20, 0x34, 0x32,      # 103: sub word [bx+0x3420], 50
-         0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E, # 108: mov word [bx+0x3414], 0x0E10
-         0xEB, 0x0A,                         # 114: jmp short done  (+10 → byte 126)
-         # has_weapon → WEAPON ATTACK via execute_super (DI=21 animation)
-         0x57,                               # 116: push di
-         0x56,                               # 117: push si
-         0x0E,                               # 118: push cs
-         0xE8, disp_H & 0xFF, (disp_H >> 8) & 0xFF,  # 119: call near execute_super
-         0x90, 0x90,                         # 122: nop nop
-         0x59,                               # 124: pop cx
-         0x59,                               # 125: pop cx
-         0x5F,                               # 126: pop di   ← done:
-         0x5E,                               # 127: pop si
-         0x5D,                               # 128: pop bp
-         0xCB,                               # 129: retf
+         # State check: [bx+0x3414] / 50 == 5 means holding weapon (idle)
+         0x8B, 0x87, 0x14, 0x34,             # 72: mov ax, [bx+0x3414]
+         0x53,                               # 76: push bx
+         0xBB, 0x32, 0x00,                   # 77: mov bx, 0x32  (50)
+         0x99,                               # 80: cwd
+         0xF7, 0xFB,                         # 81: idiv bx
+         0x5B,                               # 83: pop bx
+         0x3D, 0x05, 0x00,                   # 84: cmp ax, 5
+         0x74, 0x0D,                         # 87: jz has_weapon  (+13 → byte 102)
+         # Not state 5 → SUMMON: deduct MP, set state 0x0E10 (creates sword)
+         0x83, 0xAF, 0x20, 0x34, 0x32,      # 89: sub word [bx+0x3420], 50
+         0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E, # 94: mov word [bx+0x3414], 0x0E10
+         0xEB, 0x0A,                         # 100: jmp short done  (+10 → byte 112)
+         # has_weapon (state 5) → WEAPON ATTACK via execute_super
+         0x57,                               # 102: push di
+         0x56,                               # 103: push si
+         0x0E,                               # 104: push cs
+         0xE8, disp_H & 0xFF, (disp_H >> 8) & 0xFF,  # 105: call execute_super
+         0x90, 0x90,                         # 108: nop nop
+         0x59,                               # 110: pop cx
+         0x59,                               # 111: pop cx
+         # done:
+         0x5F,                               # 112: pop di
+         0x5E,                               # 113: pop si
+         0x5D,                               # 114: pop bp
+         0xCB,                               # 115: retf
+         # NOP padding to keep table at byte 130
+         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,  # 116-122
+         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,  # 123-129
          0x10, 0x12, 0x2C,                   # 130: table P1: Q  E  Z
          0x16, 0x18, 0x32,                   # 133: table P2: U  O  M
          0x47, 0x49, 0x4F,                   # 136: table P3: 7  9  1

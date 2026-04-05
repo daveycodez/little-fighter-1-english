@@ -677,8 +677,9 @@ def build_mods_com():
          0x5B,                               # 83: pop bx
          0x3D, 0x05, 0x00,                   # 84: cmp ax, 5
          0x74, 0x0D,                         # 87: jz has_weapon  (+13 → byte 102)
-         # Not state 5 → SUMMON: deduct MP, set state 0x0E10 (creates sword)
-         0x83, 0xAF, 0x20, 0x34, 0x32,      # 89: sub word [bx+0x3420], 50
+         # Not state 5 → SUMMON: set state 0x0E10 (creates sword)
+         # MP deduction handled by game's own code (patched by free_supers)
+         0x90, 0x90, 0x90, 0x90, 0x90,      # 89: nop (was: sub word [bx+0x3420], 50)
          0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E, # 94: mov word [bx+0x3414], 0x0E10
          0xEB, 0x0A,                         # 100: jmp short done  (+10 → byte 112)
          # has_weapon (state 5) → WEAPON ATTACK via execute_super

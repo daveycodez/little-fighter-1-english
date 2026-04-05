@@ -159,7 +159,7 @@ def build_mods_com():
 
     a.mov_rr16('bx', 'ax')
     a.mov_r8_imm('ah', 0x3F)
-    a.mov_r16_imm('cx', 255)
+    a.mov_r16_imm('cx', 512)
     a.mov_r16_label('dx', 'read_buffer')
     a.int21()
     a.jc('close_cfg')
@@ -181,6 +181,10 @@ def build_mods_com():
     a.mov_r16_label('si', 'str_free_jump')
     a.call('search')
     a.mov_mem_al('flag_free_jump')
+
+    a.mov_r16_label('si', 'str_free_supers')
+    a.call('search')
+    a.mov_mem_al('flag_free_supers')
 
     # -- patch START.EXE --
     a.mov_r8_imm('ah', 0x3D)
@@ -218,7 +222,7 @@ def build_mods_com():
     a.mov_r8_imm('al', 0x02)
     a.mov_r16_label('dx', 'fn_fight')
     a.int21()
-    a.jc('exit')
+    a.jc_far('exit')
     a.mov_mem_ax('cur_handle')
 
     # free_run patch 1: offset 0x1B190, 5 bytes (dash init -10 MP)
@@ -254,6 +258,36 @@ def build_mods_com():
     a.mov_r16_imm('dx', 0xB1D7)
     a.mov_r16_label('si', 'nops')
     a.mov_r16_label('di', 'sub_mp_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+
+    # free_supers: 6 dynamic-cost patches (SUB [BX+3420h], AX — 4 bytes)
+    for cx_hi, dx_lo in [(0x0000, 0x8DF1), (0x0000, 0xC877),
+                          (0x0000, 0xC95A), (0x0000, 0xCB9F),
+                          (0x0001, 0x088B), (0x0001, 0x0A21)]:
+        a.mov_al_mem('flag_free_supers')
+        a.mov_r16_imm('cx', cx_hi)
+        a.mov_r16_imm('dx', dx_lo)
+        a.mov_r16_label('si', 'nops')
+        a.mov_r16_label('di', 'sub_mp_ax_orig')
+        a.mov_r8_imm('bl', 4)
+        a.call('apply_patch')
+
+    # free_supers: hardcoded 25 MP cost at 0x1187E (5 bytes)
+    a.mov_al_mem('flag_free_supers')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x187E)
+    a.mov_r16_label('si', 'nops')
+    a.mov_r16_label('di', 'sub_mp_25_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+
+    # free_supers: hardcoded 50 MP cost at 0x156EC (5 bytes)
+    a.mov_al_mem('flag_free_supers')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x56EC)
+    a.mov_r16_label('si', 'nops')
+    a.mov_r16_label('di', 'sub_mp_50_orig')
     a.mov_r8_imm('bl', 5)
     a.call('apply_patch')
 
@@ -351,14 +385,19 @@ def build_mods_com():
     a.label('str_julian');   a.db("julian=1\x00")
     a.label('str_free_run'); a.db("free_run=1\x00")
     a.label('str_free_jump');a.db("free_jump=1\x00")
+    a.label('str_free_supers');a.db("free_supers=1\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
     a.label('julian_off');   a.db(0x74, 0x06)
     a.label('nops');         a.db(0x90, 0x90, 0x90, 0x90, 0x90)
     a.label('sub_mp_orig');  a.db(0x83, 0xAF, 0x20, 0x34, 0x0A)
     a.label('dec_mp_orig');  a.db(0xFF, 0x8F, 0x20, 0x34)
+    a.label('sub_mp_ax_orig');a.db(0x29, 0x87, 0x20, 0x34)
+    a.label('sub_mp_25_orig');a.db(0x83, 0xAF, 0x20, 0x34, 0x19)
+    a.label('sub_mp_50_orig');a.db(0x83, 0xAF, 0x20, 0x34, 0x32)
     a.label('flag_julian');  a.db(0)
     a.label('flag_free_run');a.db(0)
     a.label('flag_free_jump'); a.db(0)
+    a.label('flag_free_supers'); a.db(0)
     a.label('cur_handle');   a.dw(0)
     a.label('bytes_read');   a.dw(0)
     a.label('read_buffer')
@@ -374,14 +413,15 @@ def patch_play_com():
     path = os.path.join(GAME_DIR, "PLAY.COM")
     data = bytearray(open(path, "rb").read())
 
+    if len(data) == 1152 and data[0x305] == 0x70 and data[0x306] == 0x05:
+        print("  PLAY.COM already patched")
+        return True
+
     if len(data) != 1131:
         print(f"  PLAY.COM unexpected size ({len(data)}), skipping")
         return False
 
     if data[0x305] != 0x91 or data[0x306] != 0x04:
-        if data[0x305] == 0x70 and data[0x306] == 0x05:
-            print("  PLAY.COM already patched")
-            return True
         print(f"  PLAY.COM entry point unexpected ({data[0x305]:02x}{data[0x306]:02x}), skipping")
         return False
 

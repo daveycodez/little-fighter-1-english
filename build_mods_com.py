@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 """
-Build script: generates MODS.COM (DOS patcher) and patches PLAY.COM.
+Build script: generates MODS.COM (DOS patcher + optional BGM/game-speed TSR)
+and patches PLAY.COM.
+
+When bgm=1 in mods.cfg, MODS.COM installs a TSR that plays baked-in MIDI
+data through MPU-401 UART mode.  When game_speed != 1.0, the PIT is
+reprogrammed to speed up the game.  A fractional prescaler keeps music
+tempo constant regardless of game speed.
+
 Developer tool only — end users never run this.
 """
 
 import os, struct, sys
+from collections import OrderedDict
 
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_HZ = 1193182.0 / 65536.0  # ~18.2065 Hz (default DOS timer rate)
 
 
 # ---------------------------------------------------------------------------
@@ -118,6 +127,9 @@ class Asm16:
     def mov_mem16_imm(self, l, v):
         self._emit(0xC7, 0x06); self._fixup('abs16', l); self._word(0); self._word(v)
 
+    def mov_mem8_imm(self, l, v):
+        self._emit(0xC6, 0x06); self._fixup('abs16', l); self._word(0); self._emit(v & 0xFF)
+
     # -- jumps --
     def _jcc8(self, op, l):    self._emit(op); self._fixup('rel8', l); self._emit(0)
     def jc(self, l):           self._jcc8(0x72, l)
@@ -126,7 +138,9 @@ class Asm16:
     def jne(self, l):          self._jcc8(0x75, l)
     def jnz(self, l):          self._jcc8(0x75, l)
     def ja(self, l):           self._jcc8(0x77, l)
+    def jbe(self, l):          self._jcc8(0x76, l)
     def jl(self, l):           self._jcc8(0x7C, l)
+    def jle(self, l):          self._jcc8(0x7E, l)
     def jmp(self, l):          self._jcc8(0xEB, l)
     def jcxz(self, l):         self._jcc8(0xE3, l)
     def loop(self, l):         self._jcc8(0xE2, l)
@@ -162,13 +176,272 @@ class Asm16:
 
 
 # ---------------------------------------------------------------------------
+# MIDI Parser
+# ---------------------------------------------------------------------------
+
+def read_vlq(data, pos):
+    val = 0
+    while True:
+        b = data[pos]; pos += 1
+        val = (val << 7) | (b & 0x7F)
+        if not (b & 0x80):
+            return val, pos
+
+
+def midi_data_len(status):
+    top = status & 0xF0
+    if top in (0xC0, 0xD0):
+        return 1
+    if 0x80 <= top <= 0xEF:
+        return 2
+    return 0
+
+
+def parse_midi(path):
+    raw = open(path, 'rb').read()
+    assert raw[:4] == b'MThd', "Not a MIDI file"
+    hlen = struct.unpack('>I', raw[4:8])[0]
+    fmt, ntrk, div = struct.unpack('>HHH', raw[8:14])
+    assert not (div & 0x8000), "SMPTE timing not supported"
+
+    events = []
+    off = 8 + hlen
+
+    for _ in range(ntrk):
+        assert raw[off:off+4] == b'MTrk'
+        tlen = struct.unpack('>I', raw[off+4:off+8])[0]
+        end = off + 8 + tlen
+        p = off + 8
+        t = 0
+        rs = 0
+
+        while p < end:
+            dt, p = read_vlq(raw, p)
+            t += dt
+            b = raw[p]
+
+            if b == 0xFF:
+                p += 1
+                mtype = raw[p]; p += 1
+                mlen, p = read_vlq(raw, p)
+                mdata = raw[p:p+mlen]; p += mlen
+                if mtype == 0x51 and mlen == 3:
+                    tempo = (mdata[0] << 16) | (mdata[1] << 8) | mdata[2]
+                    events.append((t, 'T', tempo))
+            elif b in (0xF0, 0xF7):
+                p += 1
+                slen, p = read_vlq(raw, p)
+                p += slen
+            elif b & 0x80:
+                rs = b; p += 1
+                n = midi_data_len(rs)
+                events.append((t, 'M', bytes([rs] + list(raw[p:p+n]))))
+                p += n
+            else:
+                n = midi_data_len(rs)
+                events.append((t, 'M', bytes([rs] + list(raw[p:p+n]))))
+                p += n
+
+        off = end
+
+    events.sort(key=lambda e: (e[0], 0 if e[1] == 'T' else 1))
+    return events, div
+
+
+# ---------------------------------------------------------------------------
+# Cook MIDI events into compact binary for the ISR
+# Format: [u16 wait_ticks] [u8 count] [bytes...] ... [u16 0xFFFF = loop]
+# ---------------------------------------------------------------------------
+
+def cook_events(events, div, target_hz=BASE_HZ):
+    us_per_tick = 1e6 / target_hz
+
+    tempo = 500000
+    last_t = 0
+    last_us = 0.0
+
+    timed = []
+    for tick, kind, data in events:
+        us_per_mt = float(tempo) / float(div)
+        us = last_us + (tick - last_t) * us_per_mt
+        if kind == 'T':
+            last_t, last_us, tempo = tick, us, data
+        elif kind == 'M':
+            timed.append((us, data))
+
+    groups = OrderedDict()
+    for us, mbytes in timed:
+        tt = max(0, int(us / us_per_tick))
+        if tt not in groups:
+            groups[tt] = bytearray()
+        groups[tt].extend(mbytes)
+
+    out = bytearray()
+    prev = 0
+    first = True
+    for tt in sorted(groups):
+        wait = tt - prev
+        if wait < 0:
+            wait = 0
+        if first and wait < 1:
+            wait = 1
+        first = False
+        midi = groups[tt]
+        i = 0
+        while i < len(midi):
+            chunk = midi[i:i+255]
+            w = wait if i == 0 else 0
+            out += struct.pack('<H', w)
+            out.append(len(chunk))
+            out.extend(chunk)
+            i += 255
+        prev = tt
+
+    out += struct.pack('<H', 0xFFFF)
+    return bytes(out)
+
+
+# ---------------------------------------------------------------------------
 # Build MODS.COM
 # ---------------------------------------------------------------------------
 
-def build_mods_com():
+def build_mods_com(cooked_midi):
     a = Asm16()
 
-    # === MAIN ===
+    # =================================================================
+    #  RESIDENT SECTION (stays in memory when TSR)
+    # =================================================================
+
+    a.jmp_near('init')
+
+    # -- Resident data --
+    a.label('old_08_off');   a.dw(0)
+    a.label('old_08_seg');   a.dw(0)
+    a.label('data_ptr');     a.dw(0)
+    a.label('wait_ctr');     a.dw(1)
+    a.label('chain_ctr');    a.db(1)
+    a.label('chain_reload'); a.db(1)
+    a.label('bgm_active');   a.db(0)
+    a.label('music_acc');    a.dw(0)
+    a.label('music_add');    a.dw(182)
+    a.label('music_limit');  a.dw(182)
+
+    # -- Resident ISR: INT 08h handler --
+    # Handles BGM playback (with fractional prescaler to keep tempo
+    # constant across game speeds) and chains to the original INT 08h
+    # at approximately 18.2 Hz for BIOS time-of-day accuracy.
+    a.label('isr')
+    a.push('ax');  a.push('cx');  a.push('dx');  a.push('si')
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)            # push cs; pop ds
+
+    # Check if BGM is active
+    a.mov_al_mem('bgm_active')
+    a.cmp_al_imm(0)
+    a.je('isr_skip_music')
+
+    # Fractional music prescaler: accumulate and fire when >= limit
+    a.mov_ax_mem('music_acc')
+    # ADD AX, [music_add]
+    a.db(0x03, 0x06); a._fixup('abs16', 'music_add'); a._word(0)
+    # CMP AX, [music_limit]
+    a.db(0x3B, 0x06); a._fixup('abs16', 'music_limit'); a._word(0)
+    a.jb('isr_acc_store')
+    # SUB AX, [music_limit]
+    a.db(0x2B, 0x06); a._fixup('abs16', 'music_limit'); a._word(0)
+    a.mov_mem_ax('music_acc')
+
+    # Decrement wait counter; if not zero, skip MIDI output
+    a.db(0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)   # DEC word [wait_ctr]
+    a.jnz('isr_skip_music')
+
+    # Time to send MIDI bytes
+    a.db(0x8B, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)   # MOV SI, [data_ptr]
+
+    a.label('isr_frame')
+    a.lodsb()                    # count byte
+    a.xor_r8('ch')
+    a.mov_rr8('cl', 'al')
+    a.jcxz('isr_next_wait')
+
+    a.mov_r16_imm('dx', 0x0330)
+    a.label('isr_send')
+    a.lodsb()
+    a.db(0xEE)                   # out dx, al
+    a.loop('isr_send')
+
+    a.label('isr_next_wait')
+    a.db(0xAD)                   # lodsw — next wait value
+    a.cmp_ax_imm(0xFFFF)
+    a.je('isr_loop')
+    a.db(0x85, 0xC0)            # test ax, ax
+    a.je('isr_frame')            # wait=0 → process next frame immediately
+
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)   # MOV [data_ptr], SI
+    a.jmp('isr_skip_music')
+
+    # Store accumulator without processing music
+    a.label('isr_acc_store')
+    a.mov_mem_ax('music_acc')
+    # fall through to isr_skip_music
+
+    # -- Chain to original INT 08h --
+    a.label('isr_skip_music')
+    a.db(0xFE, 0x0E); a._fixup('abs16', 'chain_ctr'); a._word(0)  # DEC byte [chain_ctr]
+    a.jnz('isr_eoi')
+
+    # Reload chain counter and chain to original handler
+    a.mov_al_mem('chain_reload')
+    a.mov_mem_al('chain_ctr')
+
+    a.db(0x1F)                   # pop ds
+    a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('ax')
+    a.db(0x2E, 0xFF, 0x2E)      # JMP FAR [CS:old_08_off]
+    a._fixup('abs16', 'old_08_off'); a._word(0)
+
+    # Fast EOI path (don't chain this tick)
+    a.label('isr_eoi')
+    a.mov_r8_imm('al', 0x20)
+    a.db(0xE6, 0x20)            # out 0x20, al  (EOI to PIC)
+    a.db(0x1F)                   # pop ds
+    a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('ax')
+    a.db(0xCF)                   # iret
+
+    # -- Loop: all notes off, rewind to start of song --
+    a.label('isr_loop')
+    a.mov_r16_imm('cx', 16)
+    a.xor_r8('bl')
+    a.label('isr_anoff')
+    a.mov_r8_imm('al', 0xB0)
+    a.db(0x08, 0xD8)            # or al, bl
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEE)                   # out dx, al  (CC#)
+    a.mov_r8_imm('al', 0x7B)
+    a.db(0xEE)                   # out dx, al  (All Notes Off)
+    a.xor_r8('al')
+    a.db(0xEE)                   # out dx, al  (value 0)
+    a.db(0xFE, 0xC3)            # inc bl
+    a.loop('isr_anoff')
+
+    a.mov_r16_label('si', 'event_data')
+    a.db(0xAD)                   # lodsw — first wait of new loop
+    a.db(0x85, 0xC0)            # test ax, ax
+    a.je('isr_frame')
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    a.jmp('isr_skip_music')
+
+    # -- Cooked MIDI event data (resident) --
+    a.label('event_data')
+    a.db(cooked_midi)
+    a.label('end_resident')
+
+    # =================================================================
+    #  NON-RESIDENT SECTION (freed after TSR or on normal exit)
+    # =================================================================
+
+    a.label('init')
     a.cld()
 
     # -- open & read MODS.CFG --
@@ -238,6 +511,103 @@ def build_mods_com():
     a.mov_r16_label('si', 'str_easy_supers')
     a.call('search')
     a.mov_mem_al('flag_easy_supers')
+
+    a.mov_r16_label('si', 'str_bgm')
+    a.call('search')
+    a.mov_mem_al('flag_bgm')
+
+    # -- game_speed: parse decimal Hz value from mods.cfg --
+    # Format: game_speed=XX.X (PIT Hz / FPS). 18.2=normal, max 200.
+    # Parsed as value×10 (one decimal place). Music prescaler = 182/value_x10.
+    a.mov_ax_mem('bytes_read')
+    a.db(0x2D); a._word(10)     # SUB AX, 10 (positions to scan)
+    a.cmp_ax_imm(1)
+    a.jl('gs_done')
+    a.mov_rr16('cx', 'ax')
+    a.mov_r16_label('di', 'read_buffer')
+
+    a.label('gs_scan')
+    a.push('cx');  a.push('di')
+    a.mov_r16_label('si', 'str_game_speed')
+    a.mov_r16_imm('cx', 11)     # len("game_speed=")
+
+    a.label('gs_cmp')
+    a.lodsb()
+    a.cmp_al_di_ind()
+    a.jne('gs_miss')
+    a.inc16('di')
+    a.loop('gs_cmp')
+    # Match — DI points past "game_speed="
+    a.pop('ax');  a.pop('cx')    # discard saved DI and CX
+    a.jmp('gs_parse')
+
+    a.label('gs_miss')
+    a.pop('di');  a.pop('cx')
+    a.inc16('di')
+    a.loop('gs_scan')
+    a.jmp('gs_done')
+
+    # Parse decimal number at [DI]
+    a.label('gs_parse')
+    a.xor_r16('ax')             # integer accumulator
+    a.xor_r16('cx')             # decimal digit (default 0)
+
+    a.label('gs_int')
+    a.db(0x8A, 0x1D)            # MOV BL, [DI]
+    a.db(0x80, 0xFB, ord('0'))  # CMP BL, '0'
+    a.jb('gs_int_done')
+    a.db(0x80, 0xFB, ord('9'))  # CMP BL, '9'
+    a.ja('gs_int_done')
+    a.db(0x80, 0xEB, ord('0'))  # SUB BL, '0'
+    a.xor_r8('bh')
+    a.push('bx')
+    a.mov_r16_imm('bx', 10)
+    a.db(0xF7, 0xE3)            # MUL BX (DX:AX = AX × 10)
+    a.pop('bx')
+    a.add_rr16('ax', 'bx')
+    a.inc16('di')
+    a.jmp('gs_int')
+
+    a.label('gs_int_done')
+    a.cmp_byte_di_ind_imm(ord('.'))
+    a.jne('gs_mul')
+    a.inc16('di')
+    a.db(0x8A, 0x1D)            # MOV BL, [DI]
+    a.db(0x80, 0xFB, ord('0'))
+    a.jb('gs_mul')
+    a.db(0x80, 0xFB, ord('9'))
+    a.ja('gs_mul')
+    a.db(0x80, 0xEB, ord('0'))  # SUB BL, '0'
+    a.xor_r8('bh')
+    a.mov_rr16('cx', 'bx')     # CX = decimal digit
+
+    a.label('gs_mul')
+    a.mov_r16_imm('bx', 10)
+    a.db(0xF7, 0xE3)            # MUL BX
+    a.add_rr16('ax', 'cx')      # AX = value × 10
+
+    # Cap at 2000 (200.0 Hz)
+    a.cmp_ax_imm(2000)
+    a.jbe('gs_cap_ok')
+    a.mov_r16_imm('ax', 2000)
+    a.label('gs_cap_ok')
+
+    # 18.2 Hz or below → normal speed, no PIT change
+    a.cmp_ax_imm(183)
+    a.jb('gs_done')
+
+    # Set music_limit = value × 10 (music_add stays 182 from data init)
+    a.mov_mem_ax('music_limit')
+
+    # PIT divisor = 11931820 / value_x10  (1193182 Hz × 10)
+    a.push('ax')
+    a.mov_r16_imm('dx', 0x00B6)
+    a.mov_r16_imm('ax', 0x10AC)  # DX:AX = 0x00B610AC = 11931820
+    a.pop('cx')
+    a.db(0xF7, 0xF1)            # DIV CX → AX = divisor
+    a.mov_mem_ax('pit_divisor_val')
+
+    a.label('gs_done')
 
     # -- compute spawn rate value --
     a.mov_r16_imm('ax', 0x012C)        # default = 300
@@ -358,7 +728,6 @@ def build_mods_com():
     a.call('apply_patch')
 
     # cheap_supers: halve cost in push/compute/pop blocks before every CMP and SUB
-    # Uses IMUL BX, SI, 0x34 (186+) to save space for SHR AX, 1
     for cx_hi, dx_lo in [(0x0000, 0x9D73), (0x0000, 0xC35B), (0x0000, 0xCAEF),
                           (0x0001, 0x083E), (0x0001, 0x09CD), (0x0001, 0x9FE9),
                           (0x0000, 0x8DE6), (0x0000, 0xC86C), (0x0000, 0xC94F),
@@ -482,14 +851,12 @@ def build_mods_com():
     a.call('apply_patch')
 
     # easy_supers=1: replace combo handlers A,B,C,D,E,H with single-key check
-    # Each handler gets its own patch with a handler-specific CALL NEAR displacement
-    # to execute_super (0x7958), matching the original calling convention exactly.
     for label_suffix, cx_hi, dx_lo in [
-        ('A', 0x0000, 0x9868),   # combo A handler at file offset 0x9868
-        ('B', 0x0000, 0x9924),   # combo B handler at file offset 0x9924
-        ('C', 0x0000, 0x99E0),   # combo C handler at file offset 0x99E0
-        ('D', 0x0000, 0x9A9C),   # combo D handler at file offset 0x9A9C
-        ('E', 0x0000, 0x9B38),   # combo E handler at file offset 0x9B38
+        ('A', 0x0000, 0x9868),
+        ('B', 0x0000, 0x9924),
+        ('C', 0x0000, 0x99E0),
+        ('D', 0x0000, 0x9A9C),
+        ('E', 0x0000, 0x9B38),
     ]:
         a.mov_al_mem('flag_easy_supers')
         a.mov_r16_imm('cx', cx_hi)
@@ -498,7 +865,7 @@ def build_mods_com():
         a.mov_r16_label('di', f'combo_{label_suffix}_orig')
         a.mov_r8_imm('bl', 86)
         a.call('apply_patch')
-    # Handler H: 139 bytes (proper weapon flag check + summon/attack dual-path)
+    # Handler H: 139 bytes
     a.mov_al_mem('flag_easy_supers')
     a.mov_r16_imm('cx', 0x0000)
     a.mov_r16_imm('dx', 0x9C14)
@@ -507,8 +874,7 @@ def build_mods_com():
     a.mov_r8_imm('bl', 139)
     a.call('apply_patch')
 
-    # easy_run (built into easy_supers): ISR hook + code cave for single-key running
-    # ISR hook: replace POP BP/DI/SI at file 0x7386 with JMP NEAR to code cave
+    # easy_run: ISR hook + code cave
     a.mov_al_mem('flag_easy_supers')
     a.mov_r16_imm('cx', 0x0000)
     a.mov_r16_imm('dx', 0x7386)
@@ -517,7 +883,6 @@ def build_mods_com():
     a.mov_r8_imm('bl', 3)
     a.call('apply_patch')
 
-    # easy_run code cave: 133 bytes at file 0x9B8E (Handler E dead space)
     a.mov_al_mem('flag_easy_supers')
     a.mov_r16_imm('cx', 0x0000)
     a.mov_r16_imm('dx', 0x9B8E)
@@ -540,7 +905,6 @@ def build_mods_com():
     a.label('skip_h_cheap')
 
     # free_supers + easy_supers: NOP the 50 MP summon cost in handler H
-    # Only relevant when easy_supers=1 (handler H has the deduction at byte 89)
     a.mov_al_mem('flag_easy_supers')
     a.cmp_al_imm(1)
     a.jne('skip_h_free')
@@ -553,17 +917,109 @@ def build_mods_com():
     a.call('apply_patch')
     a.label('skip_h_free')
 
+    # Close FIGHT.EXE
     a.mov_bx_mem('cur_handle')
     a.mov_r8_imm('ah', 0x3E)
     a.int21()
 
+    # =================================================================
+    #  TSR / PIT decision
+    # =================================================================
+
+    # Check if BGM requested → need TSR for music playback
+    a.mov_al_mem('flag_bgm')
+    a.cmp_al_imm(1)
+    a.je('tsr_init')
+
+    # -- No TSR needed; reprogram PIT for game_speed if != 1.0 --
+    a.mov_ax_mem('pit_divisor_val')
+    a.db(0x85, 0xC0)            # test ax, ax
+    a.je('exit')                 # divisor=0 → speed 1.0, nothing to do
+
+    # Reprogram PIT channel 0
+    a.push('ax')
+    a.mov_r8_imm('al', 0x36)    # channel 0, lobyte/hibyte, mode 3
+    a.db(0xE6, 0x43)            # out 0x43, al
+    a.pop('ax')
+    a.db(0xE6, 0x40)            # out 0x40, al  (lo byte of divisor)
+    a.mov_rr8('al', 'ah')
+    a.db(0xE6, 0x40)            # out 0x40, al  (hi byte of divisor)
+    a.jmp('exit')
+
+    # -- TSR path: install music ISR --
+    a.label('tsr_init')
+
+    # Set bgm_active flag in resident data
+    a.mov_mem8_imm('bgm_active', 1)
+
+    # Reset MPU-401
+    a.mov_r16_imm('dx', 0x0331)
+    a.mov_r8_imm('al', 0xFF)
+    a.db(0xEE)                   # out dx, al
+    a.mov_r16_imm('cx', 0x2000)
+    a.label('mpu_d1')
+    a.loop('mpu_d1')
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEC)                   # in al, dx
+
+    # Enter UART mode
+    a.mov_r16_imm('dx', 0x0331)
+    a.mov_r8_imm('al', 0x3F)
+    a.db(0xEE)
+    a.mov_r16_imm('cx', 0x2000)
+    a.label('mpu_d2')
+    a.loop('mpu_d2')
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEC)
+
+    # Hook INT 08h
+    a.mov_r16_imm('ax', 0x3508)
+    a.int21()
+    a.db(0x89, 0x1E); a._fixup('abs16', 'old_08_off'); a._word(0)  # MOV [old_08_off], BX
+    a.db(0x8C, 0x06); a._fixup('abs16', 'old_08_seg'); a._word(0)  # MOV [old_08_seg], ES
+
+    a.mov_r16_imm('ax', 0x2508)
+    a.mov_r16_label('dx', 'isr')
+    a.int21()
+
+    # Reprogram PIT if game_speed != 1.0
+    a.mov_ax_mem('pit_divisor_val')
+    a.db(0x85, 0xC0)            # test ax, ax
+    a.je('tsr_no_pit')
+
+    a.push('ax')
+    a.mov_r8_imm('al', 0x36)
+    a.db(0xE6, 0x43)            # out 0x43, al
+    a.pop('ax')
+    a.db(0xE6, 0x40)            # out 0x40, al  (lo)
+    a.mov_rr8('al', 'ah')
+    a.db(0xE6, 0x40)            # out 0x40, al  (hi)
+
+    a.label('tsr_no_pit')
+
+    # Init music playback state
+    a.mov_r16_label('si', 'event_data')
+    a.db(0xAD)                   # lodsw — first wait value
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)   # MOV [data_ptr], SI
+
+    # Go TSR — keep everything up to end_resident
+    end_addr = a.labels['end_resident']
+    tsr_paras = (end_addr + 0x0F) >> 4
+    a.mov_r16_imm('dx', tsr_paras)
+    a.mov_r16_imm('ax', 0x3100)
+    a.int21()
+
+    # -- Normal exit --
     a.label('exit')
     a.mov_r16_imm('ax', 0x4C00)
     a.int21()
 
-    # === search subroutine ===
-    # SI = null-terminated search string
-    # Returns AL = 1 if found in read_buffer, 0 if not
+    # =================================================================
+    #  Subroutines (non-resident)
+    # =================================================================
+
+    # search: SI = null-terminated string → AL = 1 if found in read_buffer
     a.label('search')
     a.push('si');  a.push('di');  a.push('bx');  a.push('cx');  a.push('dx')
 
@@ -615,8 +1071,7 @@ def build_mods_com():
     a.mov_r8_imm('al', 1)
     a.ret()
 
-    # === apply_patch subroutine ===
-    # AL=flag  CX:DX=file offset  SI=on bytes  DI=off bytes  BL=size
+    # apply_patch: AL=flag CX:DX=offset SI=on DI=off BL=size
     a.label('apply_patch')
     a.push('ax');  a.push('bx');  a.push('si');  a.push('di')
     a.push('ax');  a.push('bx')
@@ -640,7 +1095,10 @@ def build_mods_com():
     a.pop('di');  a.pop('si');  a.pop('bx');  a.pop('ax')
     a.ret()
 
-    # === DATA ===
+    # =================================================================
+    #  Data (non-resident)
+    # =================================================================
+
     a.label('cfg_fname');    a.db("MODS.CFG\x00")
     a.label('fn_start');     a.db("SYS\\START.EXE\x00")
     a.label('fn_fight');     a.db("SYS\\FIGHT.EXE\x00")
@@ -656,6 +1114,8 @@ def build_mods_com():
     a.label('str_fast_mp'); a.db("fast_mp=1\x00")
     a.label('str_cheap_supers');a.db("cheap_supers=1\x00")
     a.label('str_easy_supers');a.db("easy_supers=1\x00")
+    a.label('str_bgm');      a.db("bgm=1\x00")
+    a.label('str_game_speed'); a.db("game_speed=\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
     a.label('julian_off');   a.db(0x74, 0x06)
     a.label('nops');         a.db(0x90, 0x90, 0x90, 0x90, 0x90)
@@ -682,11 +1142,13 @@ def build_mods_com():
     a.label('flag_fast_mp'); a.db(0)
     a.label('flag_cheap_supers'); a.db(0)
     a.label('flag_easy_supers'); a.db(0)
+    a.label('flag_bgm');     a.db(0)
     a.label('rate_value');   a.dw(0x012C)
     a.label('cur_handle');   a.dw(0)
     a.label('bytes_read');   a.dw(0)
+    a.label('pit_divisor_val'); a.dw(0)
 
-    # cheap_supers: IMUL BX,SI,0x34 + SHR AX,1 replaces push/mov/imul/mov/pop
+    # cheap_supers: IMUL BX,SI,0x34 + SHR AX,1
     a.label('cheap_cost_on');   a.db(0x50, 0x6B, 0xDE, 0x34, 0x58, 0xD1, 0xE8, 0x90, 0x90, 0x90, 0x90)
     a.label('cheap_cost_off');  a.db(0x50, 0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x58)
     a.label('cheap_cost_on_di');a.db(0x50, 0x6B, 0xDF, 0x34, 0x58, 0xD1, 0xE8, 0x90, 0x90, 0x90, 0x90)
@@ -695,153 +1157,132 @@ def build_mods_com():
 
     a.label('fast_mp_on');     a.db(0x8B, 0xC6, 0xB2, 0x34, 0xF7, 0xEA, 0x8B, 0xD8, 0x83, 0x87, 0x20, 0x34, 0x02)
     a.label('fast_mp_off');   a.db(0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0xFF, 0x87, 0x20, 0x34)
-    a.label('retf_byte');     a.db(0xCB)    # RETF (skip retrace wait)
-    a.label('jmp_short_byte');a.db(0xEB)   # original JMP SHORT at 0x22435
+    a.label('retf_byte');     a.db(0xCB)
+    a.label('jmp_short_byte');a.db(0xEB)
 
     # easy_supers: per-handler 86-byte patches
-    # Key fix: uses entity.field_0x3404 (control slot: 0=P1, 1=P2, 2=P3) to
-    # look up the correct easy-super scan code, rather than the entity index.
-    # The game compacts entities (e.g. P1+P3 → entities 0,1) but each entity
-    # keeps its original control slot. execute_super still receives the entity
-    # index (SI) so it operates on the correct character.
-    # Bytes 20-21 are an MZ relocation target → JMP SHORT skips them.
-    #   P1: Q=0x10 E=0x12 Z=0x2C   P2: U=0x16 O=0x18 M=0x32
-    #   P3: Num7=0x47 Num9=0x49 Num1=0x4F
-    easy_super_prefix = [                    # bytes 0-65 (common)
-         0x55,                               # 0:  push bp
-         0x8B, 0xEC,                         # 1:  mov bp, sp
-         0x56,                               # 3:  push si
-         0x57,                               # 4:  push di
-         0x8B, 0x76, 0x06,                   # 5:  mov si, [bp+6]  (entity index)
-         0x8B, 0x7E, 0x08,                   # 8:  mov di, [bp+8]  (super index)
-         0x83, 0xFE, 0x03,                   # 11: cmp si, 3
-         0x7D, 0x39,                         # 14: jge done  (+57 → byte 73)
-         0xEB, 0x04,                         # 16: jmp short past_reloc → byte 22
-         0x00, 0x00,                         # 18: padding (never executed)
-         0x00, 0x00,                         # 20: relocation target (loader writes here)
-         # Look up entity's control slot from field 0x3404
-         0x8B, 0xC6,                         # 22: mov ax, si
-         0xBA, 0x34, 0x00,                   # 24: mov dx, 0x34
-         0xF7, 0xEA,                         # 27: imul dx  (ax = si * 0x34)
-         0x8B, 0xD8,                         # 29: mov bx, ax
-         0x8A, 0x87, 0x04, 0x34,             # 31: mov al, [bx+0x3404]  (control slot)
-         0xB3, 0x03,                         # 35: mov bl, 3
-         0xF6, 0xE3,                         # 37: mul bl   (AX = slot*3)
-         0x03, 0xC7,                         # 39: add ax, di
-         0xE8, 0x00, 0x00,                   # 41: call $+3  (PIC: push IP)
-         0x5B,                               # 44: pop bx
-         0x83, 0xC3, 0x21,                   # 45: add bx, 33  (bx → table@77)
-         0x2E, 0xD7,                         # 48: cs xlatb  (al = scancode)
-         0x30, 0xE4,                         # 50: xor ah, ah
-         0x8B, 0xD8,                         # 52: mov bx, ax
-         0xD1, 0xE3,                         # 54: shl bx, 1
-         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 56: cmp word [bx+2E6Eh], 0
-         0x74, 0x0A,                         # 61: jz done  (+10 → byte 73)
-         0x57,                               # 63: push di
-         0x56,                               # 64: push si  (entity index for execute_super)
-         0x0E,                               # 65: push cs
+    easy_super_prefix = [
+         0x55,
+         0x8B, 0xEC,
+         0x56,
+         0x57,
+         0x8B, 0x76, 0x06,
+         0x8B, 0x7E, 0x08,
+         0x83, 0xFE, 0x03,
+         0x7D, 0x39,
+         0xEB, 0x04,
+         0x00, 0x00,
+         0x00, 0x00,
+         0x8B, 0xC6,
+         0xBA, 0x34, 0x00,
+         0xF7, 0xEA,
+         0x8B, 0xD8,
+         0x8A, 0x87, 0x04, 0x34,
+         0xB3, 0x03,
+         0xF6, 0xE3,
+         0x03, 0xC7,
+         0xE8, 0x00, 0x00,
+         0x5B,
+         0x83, 0xC3, 0x21,
+         0x2E, 0xD7,
+         0x30, 0xE4,
+         0x8B, 0xD8,
+         0xD1, 0xE3,
+         0x83, 0xBF, 0x6E, 0x2E, 0x00,
+         0x74, 0x0A,
+         0x57,
+         0x56,
+         0x0E,
     ]
-    easy_super_suffix = [                    # bytes 69-85 (common)
-         0x90, 0x90,                         # 69: NOP NOP (padding after 3-byte call)
-         0x59,                               # 71: pop cx
-         0x59,                               # 72: pop cx
-         0x5F,                               # 73: pop di   ← done:
-         0x5E,                               # 74: pop si
-         0x5D,                               # 75: pop bp
-         0xCB,                               # 76: retf
-         0x10, 0x12, 0x2C,                   # 77: table P1: Q  E  Z
-         0x16, 0x18, 0x32,                   # 80: table P2: U  O  M
-         0x47, 0x49, 0x4F,                   # 83: table P3: 7  9  1
+    easy_super_suffix = [
+         0x90, 0x90,
+         0x59,
+         0x59,
+         0x5F,
+         0x5E,
+         0x5D,
+         0xCB,
+         0x10, 0x12, 0x2C,
+         0x16, 0x18, 0x32,
+         0x47, 0x49, 0x4F,
     ]
-    # CALL NEAR E8 displacement: target(0x7958) - (handler_code + 69)
     for suffix, file_off in [('A',0x9868),('B',0x9924),('C',0x99E0),
                               ('D',0x9A9C),('E',0x9B38)]:
         code_off = file_off - 0x1400
         disp = (0x7958 - (code_off + 69)) & 0xFFFF
         a.label(f'easy_super_{suffix}')
         a.db(*easy_super_prefix)
-        a.db(0xE8, disp & 0xFF, (disp >> 8) & 0xFF)  # 66: call near execute_super
+        a.db(0xE8, disp & 0xFF, (disp >> 8) & 0xFF)
         a.db(*easy_super_suffix)
 
-    # Handler H: 139-byte version for Deep's weapon summon (combo type H).
-    # Uses animation state check (field_0x3414 / 50 == 5) to determine weapon
-    # status, matching the game's own state-5 handler logic. State 5 means
-    # "idle holding weapon" → weapon attack. Any other state → summon sword.
-    # The old [bx+0x2F1A] weapon-data-table check stayed set after throwing,
-    # preventing re-summon. The state check correctly resets when not holding.
+    # Handler H: 139 bytes
     code_off_H = 0x9C14 - 0x1400
     disp_H = (0x7958 - (code_off_H + 108)) & 0xFFFF
     easy_super_H = [
-         0x55,                               # 0:  push bp
-         0x8B, 0xEC,                         # 1:  mov bp, sp
-         0x56,                               # 3:  push si
-         0x57,                               # 4:  push di
-         0x8B, 0x76, 0x06,                   # 5:  mov si, [bp+6]  (entity index)
-         0x8B, 0x7E, 0x08,                   # 8:  mov di, [bp+8]  (super index)
-         0x83, 0xFE, 0x03,                   # 11: cmp si, 3
-         0x7D, 0x60,                         # 14: jge done  (+96 → byte 112)
-         0xEB, 0x04,                         # 16: jmp short past_reloc → byte 22
-         0x00, 0x00,                         # 18: padding
-         0x00, 0x00,                         # 20: relocation target
-         0x8B, 0xC6,                         # 22: mov ax, si
-         0xBA, 0x34, 0x00,                   # 24: mov dx, 0x34
-         0xF7, 0xEA,                         # 27: imul dx
-         0x8B, 0xD8,                         # 29: mov bx, ax
-         0x8A, 0x87, 0x04, 0x34,             # 31: mov al, [bx+0x3404]  (control slot)
-         0xB3, 0x03,                         # 35: mov bl, 3
-         0xF6, 0xE3,                         # 37: mul bl
-         0x03, 0xC7,                         # 39: add ax, di
-         0xE8, 0x00, 0x00,                   # 41: call $+3  (PIC)
-         0x5B,                               # 44: pop bx
-         0x83, 0xC3, 0x56,                   # 45: add bx, 86  (bx → table@130)
-         0x2E, 0xD7,                         # 48: cs xlatb
-         0x30, 0xE4,                         # 50: xor ah, ah
-         0x8B, 0xD8,                         # 52: mov bx, ax
-         0xD1, 0xE3,                         # 54: shl bx, 1
-         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 56: cmp word [bx+0x2E6Eh], 0
-         0x74, 0x31,                         # 61: jz done  (+49 → byte 112)
-         # Key pressed → compute entity offset
-         0x8B, 0xC6,                         # 63: mov ax, si
-         0xBA, 0x34, 0x00,                   # 65: mov dx, 0x34
-         0xF7, 0xEA,                         # 68: imul dx
-         0x8B, 0xD8,                         # 70: mov bx, ax
-         # State check: [bx+0x3414] / 50 == 5 means holding weapon (idle)
-         0x8B, 0x87, 0x14, 0x34,             # 72: mov ax, [bx+0x3414]
-         0x53,                               # 76: push bx
-         0xBB, 0x32, 0x00,                   # 77: mov bx, 0x32  (50)
-         0x99,                               # 80: cwd
-         0xF7, 0xFB,                         # 81: idiv bx
-         0x5B,                               # 83: pop bx
-         0x3D, 0x05, 0x00,                   # 84: cmp ax, 5
-         0x74, 0x0D,                         # 87: jz has_weapon  (+13 → byte 102)
-         # Not state 5 → SUMMON: deduct 50 MP, set state 0x0E10
-         0x83, 0xAF, 0x20, 0x34, 0x32,      # 89: sub word [bx+0x3420], 50
-         0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E, # 94: mov word [bx+0x3414], 0x0E10
-         0xEB, 0x0A,                         # 100: jmp short done  (+10 → byte 112)
-         # has_weapon (state 5) → WEAPON ATTACK via execute_super
-         0x57,                               # 102: push di
-         0x56,                               # 103: push si
-         0x0E,                               # 104: push cs
-         0xE8, disp_H & 0xFF, (disp_H >> 8) & 0xFF,  # 105: call execute_super
-         0x90, 0x90,                         # 108: nop nop
-         0x59,                               # 110: pop cx
-         0x59,                               # 111: pop cx
-         # done:
-         0x5F,                               # 112: pop di
-         0x5E,                               # 113: pop si
-         0x5D,                               # 114: pop bp
-         0xCB,                               # 115: retf
-         # NOP padding to keep table at byte 130
-         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,  # 116-122
-         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,  # 123-129
-         0x10, 0x12, 0x2C,                   # 130: table P1: Q  E  Z
-         0x16, 0x18, 0x32,                   # 133: table P2: U  O  M
-         0x47, 0x49, 0x4F,                   # 136: table P3: 7  9  1
+         0x55,
+         0x8B, 0xEC,
+         0x56,
+         0x57,
+         0x8B, 0x76, 0x06,
+         0x8B, 0x7E, 0x08,
+         0x83, 0xFE, 0x03,
+         0x7D, 0x60,
+         0xEB, 0x04,
+         0x00, 0x00,
+         0x00, 0x00,
+         0x8B, 0xC6,
+         0xBA, 0x34, 0x00,
+         0xF7, 0xEA,
+         0x8B, 0xD8,
+         0x8A, 0x87, 0x04, 0x34,
+         0xB3, 0x03,
+         0xF6, 0xE3,
+         0x03, 0xC7,
+         0xE8, 0x00, 0x00,
+         0x5B,
+         0x83, 0xC3, 0x56,
+         0x2E, 0xD7,
+         0x30, 0xE4,
+         0x8B, 0xD8,
+         0xD1, 0xE3,
+         0x83, 0xBF, 0x6E, 0x2E, 0x00,
+         0x74, 0x31,
+         0x8B, 0xC6,
+         0xBA, 0x34, 0x00,
+         0xF7, 0xEA,
+         0x8B, 0xD8,
+         0x8B, 0x87, 0x14, 0x34,
+         0x53,
+         0xBB, 0x32, 0x00,
+         0x99,
+         0xF7, 0xFB,
+         0x5B,
+         0x3D, 0x05, 0x00,
+         0x74, 0x0D,
+         0x83, 0xAF, 0x20, 0x34, 0x32,
+         0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E,
+         0xEB, 0x0A,
+         0x57,
+         0x56,
+         0x0E,
+         0xE8, disp_H & 0xFF, (disp_H >> 8) & 0xFF,
+         0x90, 0x90,
+         0x59,
+         0x59,
+         0x5F,
+         0x5E,
+         0x5D,
+         0xCB,
+         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+         0x10, 0x12, 0x2C,
+         0x16, 0x18, 0x32,
+         0x47, 0x49, 0x4F,
     ]
     a.label('easy_super_H')
     a.db(*easy_super_H)
 
-    # Original first 86 bytes of each combo handler (for restoration)
+    # Original combo handler bytes (for restoration)
     a.label('combo_A_orig')
     a.db(0x55, 0x8B, 0xEC, 0x56, 0x57, 0x8B, 0x76, 0x06, 0x8B, 0x7E,
          0x08, 0x39, 0x26, 0x7F, 0x0C, 0x77, 0x05, 0x9A, 0x2C, 0x34,
@@ -910,99 +1351,80 @@ def build_mods_com():
          0x4D, 0x64, 0x75, 0x2E, 0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7,
          0xEA, 0x8B, 0xD8, 0x8B)
 
-    # easy_run: ISR hook — JMP NEAR from ISR epilogue to code cave
-    # Replaces POP BP (5D) POP DI (5F) POP SI (5E) at file 0x7386
+    # easy_run: ISR hook
     a.label('easy_run_hook')
-    a.db(0xE9, 0x05, 0x28)     # JMP NEAR +0x2805 → IP 0x878E
+    a.db(0xE9, 0x05, 0x28)
     a.label('easy_run_hook_orig')
-    a.db(0x5D, 0x5F, 0x5E)     # POP BP, POP DI, POP SI
+    a.db(0x5D, 0x5F, 0x5E)
 
-    # easy_run: 133-byte code cave at file 0x9B8E (Handler E dead space)
-    # On EVERY ISR call: if scan code is a direction key (A/D/J/L/4/6),
-    # stores it in DS:0x2F30+player_slot so idle-run uses the walk direction.
-    # On run key press (C/./Num3): checks held direction → if none held,
-    # loads last walked direction from DS:0x2F30-32 → injects double-tap
-    # into the input history buffer for the game's native run logic.
-    # No push/pop of AX/BX/CX needed — ISR stack restores them.
+    # easy_run: 133-byte code cave
     a.label('easy_run_cave')
     a.db(
-         0x5D,                               #  0: pop bp   (replaced ISR bytes)
-         0x5F,                               #  1: pop di
-         0x5E,                               #  2: pop si
-         0xA1, 0x6C, 0x2E,                   #  3: mov ax, [0x2E6C]  (scan code)
-         # --- merged check: run keys then direction keys ---
-         0x3C, 0x2E,                         #  6: cmp al, 0x2E  (P1 run: C)
-         0x74, 0x20,                         #  8: je p1_run  (→42)
-         0x3C, 0x34,                         # 10: cmp al, 0x34  (P2 run: .)
-         0x74, 0x22,                         # 12: je p2_run  (→48)
-         0x3C, 0x51,                         # 14: cmp al, 0x51  (P3 run: Num3)
-         0x74, 0x24,                         # 16: je p3_run  (→54)
-         0x3C, 0x1E,                         # 18: cmp al, 0x1E  (P1 left: A)
-         0x74, 0x5D,                         # 20: je .track  (→115)
-         0x3C, 0x20,                         # 22: cmp al, 0x20  (P1 right: D)
-         0x74, 0x59,                         # 24: je .track  (→115)
-         0x3C, 0x24,                         # 26: cmp al, 0x24  (P2 left: J)
-         0x74, 0x55,                         # 28: je .track  (→115)
-         0x3C, 0x26,                         # 30: cmp al, 0x26  (P2 right: L)
-         0x74, 0x51,                         # 32: je .track  (→115)
-         0x3C, 0x4B,                         # 34: cmp al, 0x4B  (P3 left: Num4)
-         0x74, 0x4D,                         # 36: je .track  (→115)
-         0x3C, 0x4D,                         # 38: cmp al, 0x4D  (P3 right: Num6)
-         0x75, 0x58,                         # 40: jne done  (→130)
-         # (fall through to .track if 0x4D matched)
-         # --- p1_run (42): right=D(0x20), slot=0 ---
-         0xB3, 0x20,                         # 42: mov bl, 0x20
-         0xB2, 0x00,                         # 44: mov dl, 0
-         0xEB, 0x0A,                         # 46: jmp inject (→58)
-         # --- p2_run (48): right=L(0x26), slot=1 ---
-         0xB3, 0x26,                         # 48: mov bl, 0x26
-         0xB2, 0x01,                         # 50: mov dl, 1
-         0xEB, 0x04,                         # 52: jmp inject (→58)
-         # --- p3_run (54): right=Num6(0x4D), slot=2 ---
-         0xB3, 0x4D,                         # 54: mov bl, 0x4D
-         0xB2, 0x02,                         # 56: mov dl, 2
-         # --- inject (58): CL = BL-2 (left key), check held dirs ---
-         0x8A, 0xCB,                         # 58: mov cl, bl
-         0x80, 0xE9, 0x02,                   # 60: sub cl, 2  (left = right - 2)
-         0x30, 0xFF,                         # 63: xor bh, bh
-         # .check_dir (65):
-         0x53,                               # 65: push bx
-         0xD1, 0xE3,                         # 66: shl bx, 1
-         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 68: cmp word [bx+0x2E6E], 0
-         0x5B,                               # 73: pop bx
-         0x75, 0x14,                         # 74: jne write_dir (→96)
-         0x3A, 0xD9,                         # 76: cmp bl, cl
-         0x74, 0x04,                         # 78: je idle_fallback (→84)
-         0x8A, 0xD9,                         # 80: mov bl, cl
-         0xEB, 0xED,                         # 82: jmp .check_dir (→65)
-         # --- idle_fallback (84): load last walked direction ---
-         0x30, 0xF6,                         # 84: xor dh, dh
-         0x8B, 0xDA,                         # 86: mov bx, dx
-         0x8A, 0x9F, 0x30, 0x2F,             # 88: mov bl, [bx+0x2F30]
-         0x08, 0xDB,                         # 92: or bl, bl
-         0x74, 0x22,                         # 94: jz done (→130)
-         # --- write_dir (96): inject double-tap ---
-         0x8A, 0xD3,                         # 96: mov dl, bl
-         0x8A, 0xF2,                         # 98: mov dh, dl  (DX = dir:dir)
-         0x31, 0xDB,                         #100: xor bx, bx
-         0x8A, 0x1E, 0x98, 0x00,             #102: mov bl, [0x98]
-         0x89, 0x97, 0xF6, 0x2D,             #106: mov [bx+0x2DF6], dx  (word)
-         0x80, 0x06, 0x98, 0x00, 0x02,       #110: add byte [0x98], 2
-         # --- .track (115): store walk direction per player ---
-         0xBB, 0x30, 0x2F,                   #115: mov bx, 0x2F30
-         0x3C, 0x22,                         #118: cmp al, 0x22
-         0x72, 0x06,                         #120: jb .store (→128)
-         0x43,                               #122: inc bx
-         0x3C, 0x40,                         #123: cmp al, 0x40
-         0x72, 0x01,                         #125: jb .store (→128)
-         0x43,                               #127: inc bx
-         # .store (128):
-         0x88, 0x07,                         #128: mov [bx], al
-         # --- done (130): return to ISR epilogue ---
-         0xE9, 0x76, 0xD7,                   #130: jmp near → IP 0x5F89
+         0x5D,
+         0x5F,
+         0x5E,
+         0xA1, 0x6C, 0x2E,
+         0x3C, 0x2E,
+         0x74, 0x20,
+         0x3C, 0x34,
+         0x74, 0x22,
+         0x3C, 0x51,
+         0x74, 0x24,
+         0x3C, 0x1E,
+         0x74, 0x5D,
+         0x3C, 0x20,
+         0x74, 0x59,
+         0x3C, 0x24,
+         0x74, 0x55,
+         0x3C, 0x26,
+         0x74, 0x51,
+         0x3C, 0x4B,
+         0x74, 0x4D,
+         0x3C, 0x4D,
+         0x75, 0x58,
+         0xB3, 0x20,
+         0xB2, 0x00,
+         0xEB, 0x0A,
+         0xB3, 0x26,
+         0xB2, 0x01,
+         0xEB, 0x04,
+         0xB3, 0x4D,
+         0xB2, 0x02,
+         0x8A, 0xCB,
+         0x80, 0xE9, 0x02,
+         0x30, 0xFF,
+         0x53,
+         0xD1, 0xE3,
+         0x83, 0xBF, 0x6E, 0x2E, 0x00,
+         0x5B,
+         0x75, 0x14,
+         0x3A, 0xD9,
+         0x74, 0x04,
+         0x8A, 0xD9,
+         0xEB, 0xED,
+         0x30, 0xF6,
+         0x8B, 0xDA,
+         0x8A, 0x9F, 0x30, 0x2F,
+         0x08, 0xDB,
+         0x74, 0x22,
+         0x8A, 0xD3,
+         0x8A, 0xF2,
+         0x31, 0xDB,
+         0x8A, 0x1E, 0x98, 0x00,
+         0x89, 0x97, 0xF6, 0x2D,
+         0x80, 0x06, 0x98, 0x00, 0x02,
+         0xBB, 0x30, 0x2F,
+         0x3C, 0x22,
+         0x72, 0x06,
+         0x43,
+         0x3C, 0x40,
+         0x72, 0x01,
+         0x43,
+         0x88, 0x07,
+         0xE9, 0x76, 0xD7,
     )
 
-    # easy_run cave: original 133 bytes from Handler E tail (for revert)
+    # easy_run cave: original 133 bytes (for revert)
     a.label('easy_run_cave_orig')
     a.db(0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7, 0xEA, 0x8B,
          0xD8, 0x80, 0xBF, 0x2C, 0x4D, 0x78, 0x75, 0x18,
@@ -1070,8 +1492,26 @@ def patch_play_com():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    midi_path = os.path.join(GAME_DIR, "SYS", "MAIN.mid")
+    if os.path.exists(midi_path):
+        print("Parsing MIDI...")
+        events, div = parse_midi(midi_path)
+        midi_count = sum(1 for _, k, _ in events if k == 'M')
+        tempo_count = sum(1 for _, k, _ in events if k == 'T')
+        print(f"  {midi_count} MIDI events, {tempo_count} tempo changes, division={div}")
+
+        print(f"Cooking events (target rate: {BASE_HZ:.1f} Hz)...")
+        cooked = cook_events(events, div)
+        print(f"  Cooked data: {len(cooked)} bytes")
+    else:
+        print("  SYS/MAIN.mid not found — BGM will be silent")
+        cooked = struct.pack('<HBH', 1, 0, 0xFFFF)
+
     print("Building MODS.COM...")
-    mods_bin = build_mods_com()
+    mods_bin = build_mods_com(cooked)
+    if len(mods_bin) > 65280:
+        print(f"  ERROR: MODS.COM too large ({len(mods_bin)} bytes, limit ~65280)")
+        sys.exit(1)
     mods_path = os.path.join(GAME_DIR, "MODS.COM")
     open(mods_path, "wb").write(mods_bin)
     print(f"  Written {len(mods_bin)} bytes to MODS.COM")

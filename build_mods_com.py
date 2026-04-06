@@ -4,9 +4,10 @@ Build script: generates MODS.COM (DOS patcher + optional BGM/game-speed TSR)
 and patches PLAY.COM.
 
 When bgm=1 in mods.cfg, MODS.COM installs a TSR that plays baked-in MIDI
-data through MPU-401 UART mode.  When game_speed != 1.0, the PIT is
-reprogrammed to speed up the game.  A fractional prescaler keeps music
-tempo constant regardless of game speed.
+data through MPU-401 UART mode.  The PIT always runs at 200 Hz for
+jitter-free music; a chain prescaler in the ISR throttles BIOS tick
+updates to the configured game_speed.  When bgm=0, PIT is reprogrammed
+directly to game_speed with no TSR.
 
 Developer tool only — end users never run this.
 """
@@ -16,6 +17,7 @@ from collections import OrderedDict
 
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_HZ = 1193182.0 / 65536.0  # ~18.2065 Hz (default DOS timer rate)
+COOK_HZ = 200.0                # cook MIDI at max supported PIT rate
 
 
 # ---------------------------------------------------------------------------
@@ -319,43 +321,70 @@ def build_mods_com(cooked_midi):
     a.label('old_08_seg');   a.dw(0)
     a.label('data_ptr');     a.dw(0)
     a.label('wait_ctr');     a.dw(1)
-    a.label('chain_ctr');    a.db(1)
-    a.label('chain_reload'); a.db(1)
-    a.label('bgm_active');   a.db(0)
-    a.label('music_acc');    a.dw(0)
-    a.label('music_add');    a.dw(182)
-    a.label('music_limit');  a.dw(182)
+    a.label('chain_acc');    a.dw(0)
+    a.label('chain_step');   a.dw(182)
+    a.label('muted');        a.db(0)
+    a.label('prev_scan');    a.db(0)
 
     # -- Resident ISR: INT 08h handler --
-    # Handles BGM playback (with fractional prescaler to keep tempo
-    # constant across game speeds) and chains to the original INT 08h
-    # at approximately 18.2 Hz for BIOS time-of-day accuracy.
+    # PIT always runs at 200 Hz when BGM is active.  Each tick processes
+    # exactly one cooked MIDI tick (no bunching, no jitter).  A chain
+    # prescaler throttles BIOS tick-counter updates to game_speed rate.
     a.label('isr')
     a.push('ax');  a.push('cx');  a.push('dx');  a.push('si')
     a.db(0x1E)                   # push ds
     a.db(0x0E, 0x1F)            # push cs; pop ds
 
-    # Check if BGM is active
-    a.mov_al_mem('bgm_active')
-    a.cmp_al_imm(0)
-    a.je('isr_skip_music')
+    # ---- Chain prescaler: game tick rate control ----
+    # chain_acc += chain_step; fire when >= 2000 (i.e. COOK_HZ * 10)
+    a.mov_ax_mem('chain_acc')
+    a.db(0x03, 0x06); a._fixup('abs16', 'chain_step'); a._word(0)  # ADD AX, [chain_step]
+    a.cmp_ax_imm(2000)
+    a.jb('isr_no_chain')
 
-    # Fractional music prescaler: accumulate and fire when >= limit
-    a.mov_ax_mem('music_acc')
-    # ADD AX, [music_add]
-    a.db(0x03, 0x06); a._fixup('abs16', 'music_add'); a._word(0)
-    # CMP AX, [music_limit]
-    a.db(0x3B, 0x06); a._fixup('abs16', 'music_limit'); a._word(0)
-    a.jb('isr_acc_store')
-    # SUB AX, [music_limit]
-    a.db(0x2B, 0x06); a._fixup('abs16', 'music_limit'); a._word(0)
-    a.mov_mem_ax('music_acc')
+    a.db(0x2D); a._word(2000)   # SUB AX, 2000
+    a.mov_mem_ax('chain_acc')
+    # Chain to original INT 08h (BIOS tick counter + EOI)
+    a.db(0x9C)                   # pushf (simulate INT frame)
+    a.db(0xFF, 0x1E)             # call far [old_08_off]
+    a._fixup('abs16', 'old_08_off'); a._word(0)
+    a.jmp('isr_midi')
 
-    # Decrement wait counter; if not zero, skip MIDI output
+    a.label('isr_no_chain')
+    a.mov_mem_ax('chain_acc')
+    # No chain — send EOI ourselves
+    a.mov_r8_imm('al', 0x20)
+    a.db(0xE6, 0x20)            # out 0x20, al
+
+    # ---- Poll port 0x60 for mute toggle key (edge detect) ----
+    a.label('isr_midi')
+    a.db(0xE4, 0x60)            # in al, 0x60
+    a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)  # cmp al, [prev_scan]
+    a.je('isr_no_key')           # same scan code as last tick
+    a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)        # mov [prev_scan], al
+    a.cmp_al_imm(0x57)          # F11 make code?
+    a.jne('isr_no_key')
+
+    # Toggle muted and adjust chain_step offset
+    a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)  # XOR byte [muted], 1
+    a.db(0x01)
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
+    a.db(0x00)
+    a.jne('isr_mute_on')
+    # Unmuted: no offset to adjust
+    a.jmp('isr_no_key')
+    a.label('isr_mute_on')
+
+    a.label('isr_no_key')
+
+    # ---- Skip MIDI when muted ----
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
+    a.db(0x00)
+    a.jne('isr_done')
+    a.cld()
     a.db(0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)   # DEC word [wait_ctr]
-    a.jnz('isr_skip_music')
+    a.jnz('isr_done')
 
-    # Time to send MIDI bytes
     a.db(0x8B, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)   # MOV SI, [data_ptr]
 
     a.label('isr_frame')
@@ -379,31 +408,8 @@ def build_mods_com(cooked_midi):
 
     a.mov_mem_ax('wait_ctr')
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)   # MOV [data_ptr], SI
-    a.jmp('isr_skip_music')
 
-    # Store accumulator without processing music
-    a.label('isr_acc_store')
-    a.mov_mem_ax('music_acc')
-    # fall through to isr_skip_music
-
-    # -- Chain to original INT 08h --
-    a.label('isr_skip_music')
-    a.db(0xFE, 0x0E); a._fixup('abs16', 'chain_ctr'); a._word(0)  # DEC byte [chain_ctr]
-    a.jnz('isr_eoi')
-
-    # Reload chain counter and chain to original handler
-    a.mov_al_mem('chain_reload')
-    a.mov_mem_al('chain_ctr')
-
-    a.db(0x1F)                   # pop ds
-    a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('ax')
-    a.db(0x2E, 0xFF, 0x2E)      # JMP FAR [CS:old_08_off]
-    a._fixup('abs16', 'old_08_off'); a._word(0)
-
-    # Fast EOI path (don't chain this tick)
-    a.label('isr_eoi')
-    a.mov_r8_imm('al', 0x20)
-    a.db(0xE6, 0x20)            # out 0x20, al  (EOI to PIC)
+    a.label('isr_done')
     a.db(0x1F)                   # pop ds
     a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('ax')
     a.db(0xCF)                   # iret
@@ -430,7 +436,7 @@ def build_mods_com(cooked_midi):
     a.je('isr_frame')
     a.mov_mem_ax('wait_ctr')
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
-    a.jmp('isr_skip_music')
+    a.jmp('isr_done')
 
     # -- Cooked MIDI event data (resident) --
     a.label('event_data')
@@ -496,9 +502,9 @@ def build_mods_com(cooked_midi):
     a.call('search')
     a.mov_mem_al('flag_all_weapons')
 
-    a.mov_r16_label('si', 'str_speed_hack')
+    a.mov_r16_label('si', 'str_vsync_off')
     a.call('search')
-    a.mov_mem_al('flag_speed_hack')
+    a.mov_mem_al('flag_vsync_off')
 
     a.mov_r16_label('si', 'str_fast_mp')
     a.call('search')
@@ -518,11 +524,12 @@ def build_mods_com(cooked_midi):
 
     # -- game_speed: parse decimal Hz value from mods.cfg --
     # Format: game_speed=XX.X (PIT Hz / FPS). 18.2=normal, max 200.
-    # Parsed as value×10 (one decimal place). Music prescaler = 182/value_x10.
+    # Parsed as value×10 (one decimal place), stored in value_x10_var.
     a.mov_ax_mem('bytes_read')
     a.db(0x2D); a._word(10)     # SUB AX, 10 (positions to scan)
     a.cmp_ax_imm(1)
-    a.jl('gs_done')
+    a.db(0x7D, 0x03)            # JGE +3 (skip jmp if >= 1)
+    a.jmp_near('gs_done')
     a.mov_rr16('cx', 'ax')
     a.mov_r16_label('di', 'read_buffer')
 
@@ -537,7 +544,6 @@ def build_mods_com(cooked_midi):
     a.jne('gs_miss')
     a.inc16('di')
     a.loop('gs_cmp')
-    # Match — DI points past "game_speed="
     a.pop('ax');  a.pop('cx')    # discard saved DI and CX
     a.jmp('gs_parse')
 
@@ -545,7 +551,7 @@ def build_mods_com(cooked_midi):
     a.pop('di');  a.pop('cx')
     a.inc16('di')
     a.loop('gs_scan')
-    a.jmp('gs_done')
+    a.jmp_near('gs_done')
 
     # Parse decimal number at [DI]
     a.label('gs_parse')
@@ -592,12 +598,13 @@ def build_mods_com(cooked_midi):
     a.mov_r16_imm('ax', 2000)
     a.label('gs_cap_ok')
 
-    # 18.2 Hz or below → normal speed, no PIT change
-    a.cmp_ax_imm(183)
-    a.jb('gs_done')
+    # Always store the effective Hz*10 (default 182 if parser didn't run)
+    a.mov_mem_ax('value_x10_var')
 
-    # Set music_limit = value × 10 (music_add stays 182 from data init)
-    a.mov_mem_ax('music_limit')
+    # 18.2 Hz or below (after offset) → no PIT change needed
+    a.cmp_ax_imm(183)
+    a.db(0x73, 0x03)            # JNB +3 (skip jmp if >= 183)
+    a.jmp_near('gs_done')
 
     # PIT divisor = 11931820 / value_x10  (1193182 Hz × 10)
     a.push('ax')
@@ -608,6 +615,23 @@ def build_mods_com(cooked_midi):
     a.mov_mem_ax('pit_divisor_val')
 
     a.label('gs_done')
+
+    # When bgm=1: PIT runs at 200 Hz for jitter-free MIDI playback.
+    # Game tick rate is throttled by the chain prescaler in the ISR.
+    a.mov_al_mem('flag_bgm')
+    a.cmp_al_imm(1)
+    a.jne('gs_bgm_done')
+
+    # chain_step = value_x10_var + 2 (+0.2 Hz to compensate for ISR overhead)
+    a.mov_ax_mem('value_x10_var')
+    a.db(0x05); a._word(2)      # ADD AX, 2
+    a.mov_mem_ax('chain_step')
+
+    # Override PIT to 200 Hz (divisor 5966) for smooth MIDI
+    a.mov_r16_imm('ax', 5966)
+    a.mov_mem_ax('pit_divisor_val')
+
+    a.label('gs_bgm_done')
 
     # -- compute spawn rate value --
     a.mov_r16_imm('ax', 0x012C)        # default = 300
@@ -841,8 +865,8 @@ def build_mods_com(cooked_midi):
     a.mov_r8_imm('bl', 13)
     a.call('apply_patch')
 
-    # speed_hack=1: skip retrace wait (EB→CB at 0x22435, RETF instead of JMP)
-    a.mov_al_mem('flag_speed_hack')
+    # vsync=0: skip retrace wait (EB→CB at 0x22435, RETF instead of JMP)
+    a.mov_al_mem('flag_vsync_off')
     a.mov_r16_imm('cx', 0x0002)
     a.mov_r16_imm('dx', 0x2435)
     a.mov_r16_label('si', 'retf_byte')
@@ -948,9 +972,6 @@ def build_mods_com(cooked_midi):
 
     # -- TSR path: install music ISR --
     a.label('tsr_init')
-
-    # Set bgm_active flag in resident data
-    a.mov_mem8_imm('bgm_active', 1)
 
     # Reset MPU-401
     a.mov_r16_imm('dx', 0x0331)
@@ -1110,7 +1131,7 @@ def build_mods_com(cooked_midi):
     a.label('str_spawn_w2'); a.db("spawn_weapons=2\x00")
     a.label('str_spawn_w3'); a.db("spawn_weapons=3\x00")
     a.label('str_all_weapons');a.db("all_weapons=1\x00")
-    a.label('str_speed_hack');a.db("speed_hack=1\x00")
+    a.label('str_vsync_off'); a.db("vsync=0\x00")
     a.label('str_fast_mp'); a.db("fast_mp=1\x00")
     a.label('str_cheap_supers');a.db("cheap_supers=1\x00")
     a.label('str_easy_supers');a.db("easy_supers=1\x00")
@@ -1138,7 +1159,7 @@ def build_mods_com(cooked_midi):
     a.label('flag_spawn_w2');a.db(0)
     a.label('flag_spawn_w3');a.db(0)
     a.label('flag_all_weapons'); a.db(0)
-    a.label('flag_speed_hack'); a.db(0)
+    a.label('flag_vsync_off'); a.db(0)
     a.label('flag_fast_mp'); a.db(0)
     a.label('flag_cheap_supers'); a.db(0)
     a.label('flag_easy_supers'); a.db(0)
@@ -1147,6 +1168,7 @@ def build_mods_com(cooked_midi):
     a.label('cur_handle');   a.dw(0)
     a.label('bytes_read');   a.dw(0)
     a.label('pit_divisor_val'); a.dw(0)
+    a.label('value_x10_var');  a.dw(182)
 
     # cheap_supers: IMUL BX,SI,0x34 + SHR AX,1
     a.label('cheap_cost_on');   a.db(0x50, 0x6B, 0xDE, 0x34, 0x58, 0xD1, 0xE8, 0x90, 0x90, 0x90, 0x90)
@@ -1500,8 +1522,8 @@ if __name__ == "__main__":
         tempo_count = sum(1 for _, k, _ in events if k == 'T')
         print(f"  {midi_count} MIDI events, {tempo_count} tempo changes, division={div}")
 
-        print(f"Cooking events (target rate: {BASE_HZ:.1f} Hz)...")
-        cooked = cook_events(events, div)
+        print(f"Cooking events (target rate: {COOK_HZ:.1f} Hz)...")
+        cooked = cook_events(events, div, target_hz=COOK_HZ)
         print(f"  Cooked data: {len(cooked)} bytes")
     else:
         print("  SYS/MAIN.mid not found — BGM will be silent")

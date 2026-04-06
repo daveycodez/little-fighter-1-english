@@ -17,7 +17,7 @@ from collections import OrderedDict
 
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_HZ = 1193182.0 / 65536.0  # ~18.2065 Hz (default DOS timer rate)
-COOK_HZ = 200.0                # cook MIDI at max supported PIT rate
+COOK_HZ = 72.8                 # cook MIDI at 72.8 Hz (N=4 × 18.2 → perfect 4:1)
 
 
 # ---------------------------------------------------------------------------
@@ -323,12 +323,13 @@ def build_mods_com(cooked_midi):
     a.label('wait_ctr');     a.dw(1)
     a.label('chain_acc');    a.dw(0)
     a.label('chain_step');   a.dw(182)
+    a.label('chain_thresh'); a.dw(728)
     a.label('muted');        a.db(0)
     a.label('prev_scan');    a.db(0)
 
     # -- Resident ISR: INT 08h handler --
-    # PIT always runs at 200 Hz when BGM is active.  Each tick processes
-    # exactly one cooked MIDI tick (no bunching, no jitter).  A chain
+    # PIT at game_speed×4 Hz with bgm (perfect 4:1 at default 18.2 Hz)
+    # jitter).  Each tick processes exactly one cooked MIDI tick.  A chain
     # prescaler throttles BIOS tick-counter updates to game_speed rate.
     a.label('isr')
     a.push('ax');  a.push('cx');  a.push('dx');  a.push('si')
@@ -336,18 +337,29 @@ def build_mods_com(cooked_midi):
     a.db(0x0E, 0x1F)            # push cs; pop ds
 
     # ---- Chain prescaler: game tick rate control ----
-    # chain_acc += chain_step; fire when >= 2000 (i.e. COOK_HZ * 10)
+    # chain_acc += chain_step; fire when >= chain_thresh (COOK_HZ * 10)
     a.mov_ax_mem('chain_acc')
     a.db(0x03, 0x06); a._fixup('abs16', 'chain_step'); a._word(0)  # ADD AX, [chain_step]
-    a.cmp_ax_imm(2000)
+    a.db(0x3B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)  # CMP AX, [chain_thresh]
     a.jb('isr_no_chain')
 
-    a.db(0x2D); a._word(2000)   # SUB AX, 2000
+    a.db(0x2B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)  # SUB AX, [chain_thresh]
     a.mov_mem_ax('chain_acc')
     # Chain to original INT 08h (BIOS tick counter + EOI)
     a.db(0x9C)                   # pushf (simulate INT frame)
     a.db(0xFF, 0x1E)             # call far [old_08_off]
     a._fixup('abs16', 'old_08_off'); a._word(0)
+
+    # ---- Poll port 0x60 for mute toggle (chain ticks only) ----
+    a.db(0xE4, 0x60)            # in al, 0x60
+    a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)  # cmp al, [prev_scan]
+    a.je('isr_midi')             # same scan code — skip
+    a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)        # mov [prev_scan], al
+    a.cmp_al_imm(0x57)          # F11 make code?
+    a.jne('isr_midi')
+    # Toggle muted
+    a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)  # XOR byte [muted], 1
+    a.db(0x01)
     a.jmp('isr_midi')
 
     a.label('isr_no_chain')
@@ -356,26 +368,8 @@ def build_mods_com(cooked_midi):
     a.mov_r8_imm('al', 0x20)
     a.db(0xE6, 0x20)            # out 0x20, al
 
-    # ---- Poll port 0x60 for mute toggle key (edge detect) ----
+    # ---- Process MIDI ----
     a.label('isr_midi')
-    a.db(0xE4, 0x60)            # in al, 0x60
-    a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)  # cmp al, [prev_scan]
-    a.je('isr_no_key')           # same scan code as last tick
-    a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)        # mov [prev_scan], al
-    a.cmp_al_imm(0x57)          # F11 make code?
-    a.jne('isr_no_key')
-
-    # Toggle muted and adjust chain_step offset
-    a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)  # XOR byte [muted], 1
-    a.db(0x01)
-    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
-    a.db(0x00)
-    a.jne('isr_mute_on')
-    # Unmuted: no offset to adjust
-    a.jmp('isr_no_key')
-    a.label('isr_mute_on')
-
-    a.label('isr_no_key')
 
     # ---- Skip MIDI when muted ----
     a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
@@ -523,7 +517,7 @@ def build_mods_com(cooked_midi):
     a.mov_mem_al('flag_bgm')
 
     # -- game_speed: parse decimal Hz value from mods.cfg --
-    # Format: game_speed=XX.X (PIT Hz / FPS). 18.2=normal, max 200.
+    # Format: game_speed=XX.X (PIT Hz / FPS). 18.2=normal; with bgm, match COOK_HZ/N in build.
     # Parsed as value×10 (one decimal place), stored in value_x10_var.
     a.mov_ax_mem('bytes_read')
     a.db(0x2D); a._word(10)     # SUB AX, 10 (positions to scan)
@@ -622,13 +616,17 @@ def build_mods_com(cooked_midi):
     a.cmp_al_imm(1)
     a.jne('gs_bgm_done')
 
-    # chain_step = value_x10_var + 2 (+0.2 Hz to compensate for ISR overhead)
+    # chain_step = value_x10_var (game_speed * 10)
     a.mov_ax_mem('value_x10_var')
-    a.db(0x05); a._word(2)      # ADD AX, 2
     a.mov_mem_ax('chain_step')
 
-    # Override PIT to 200 Hz (divisor 5966) for smooth MIDI
-    a.mov_r16_imm('ax', 5966)
+    # PIT fixed at 72.8 Hz (= 18.2 × 4) for MIDI timing.
+    # chain_thresh = 728 (72.8 × 10). Perfect 4:1 at game_speed=18.2.
+    a.mov_r16_imm('ax', 728)
+    a.mov_mem_ax('chain_thresh')
+
+    # PIT divisor = 16390 (1193182 / 72.8)
+    a.mov_r16_imm('ax', 16390)
     a.mov_mem_ax('pit_divisor_val')
 
     a.label('gs_bgm_done')

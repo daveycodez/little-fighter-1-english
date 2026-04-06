@@ -472,13 +472,13 @@ def build_mods_com():
     a.mov_r8_imm('bl', 3)
     a.call('apply_patch')
 
-    # easy_run code cave: 96 bytes at file 0x9B8E (Handler E dead space)
+    # easy_run code cave: 133 bytes at file 0x9B8E (Handler E dead space)
     a.mov_al_mem('flag_easy_supers')
     a.mov_r16_imm('cx', 0x0000)
     a.mov_r16_imm('dx', 0x9B8E)
     a.mov_r16_label('si', 'easy_run_cave')
     a.mov_r16_label('di', 'easy_run_cave_orig')
-    a.mov_r8_imm('bl', 96)
+    a.mov_r8_imm('bl', 133)
     a.call('apply_patch')
 
     a.mov_bx_mem('cur_handle')
@@ -837,68 +837,92 @@ def build_mods_com():
     a.label('easy_run_hook_orig')
     a.db(0x5D, 0x5F, 0x5E)     # POP BP, POP DI, POP SI
 
-    # easy_run: 96-byte code cave at file 0x9B8E (Handler E dead space)
-    # Detects run key press (C/./Num3), checks which direction key is held,
-    # and injects a double-tap into the input history buffer so the game's
-    # native run-initiation logic fires (respecting MP costs / free_run).
+    # easy_run: 133-byte code cave at file 0x9B8E (Handler E dead space)
+    # On EVERY ISR call: if scan code is a direction key (A/D/J/L/4/6),
+    # stores it in DS:0x2F30+player_slot so idle-run uses the walk direction.
+    # On run key press (C/./Num3): checks held direction → if none held,
+    # loads last walked direction from DS:0x2F30-32 → injects double-tap
+    # into the input history buffer for the game's native run logic.
+    # No push/pop of AX/BX/CX needed — ISR stack restores them.
     a.label('easy_run_cave')
     a.db(
          0x5D,                               #  0: pop bp   (replaced ISR bytes)
          0x5F,                               #  1: pop di
          0x5E,                               #  2: pop si
-         0x50,                               #  3: push ax  (save regs)
-         0x53,                               #  4: push bx
-         0x51,                               #  5: push cx
-         0xA1, 0x6C, 0x2E,                   #  6: mov ax, [0x2E6C]  (scan code)
-         0x3C, 0x2E,                         #  9: cmp al, 0x2E  (P1 run: C)
-         0x74, 0x0A,                         # 11: je p1_run  (→23)
-         0x3C, 0x34,                         # 13: cmp al, 0x34  (P2 run: .)
-         0x74, 0x0C,                         # 15: je p2_run  (→29)
-         0x3C, 0x51,                         # 17: cmp al, 0x51  (P3 run: Num3)
-         0x74, 0x0E,                         # 19: je p3_run  (→35)
-         0xEB, 0x43,                         # 21: jmp done   (→90)
-         # p1_run (23): D=right(0x20), A=left(0x1E)
-         0xB3, 0x20,                         # 23: mov bl, 0x20
-         0xB1, 0x1E,                         # 25: mov cl, 0x1E
-         0xEB, 0x0A,                         # 27: jmp inject (→39)
-         # p2_run (29): L=right(0x26), J=left(0x24)
-         0xB3, 0x26,                         # 29: mov bl, 0x26
-         0xB1, 0x24,                         # 31: mov cl, 0x24
-         0xEB, 0x04,                         # 33: jmp inject (→39)
-         # p3_run (35): Num6=right(0x4D), Num4=left(0x4B)
-         0xB3, 0x4D,                         # 35: mov bl, 0x4D
-         0xB1, 0x4B,                         # 37: mov cl, 0x4B
-         # inject (39): check right dir key, then left
-         0x30, 0xFF,                         # 39: xor bh, bh
-         0x53,                               # 41: push bx
-         0xD1, 0xE3,                         # 42: shl bx, 1
-         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 44: cmp word [bx+0x2E6E], 0
-         0x5B,                               # 49: pop bx
-         0x75, 0x0F,                         # 50: jne write_dir (→67)
-         0x8A, 0xD9,                         # 52: mov bl, cl  (try left key)
-         0x30, 0xFF,                         # 54: xor bh, bh
-         0x53,                               # 56: push bx
-         0xD1, 0xE3,                         # 57: shl bx, 1
-         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 59: cmp word [bx+0x2E6E], 0
-         0x5B,                               # 64: pop bx
-         0x74, 0x17,                         # 65: je done  (→90)
-         # write_dir (67): inject double-tap into history buffer
-         0x8A, 0xD3,                         # 67: mov dl, bl  (save scan code)
-         0xA0, 0x98, 0x00,                   # 69: mov al, [0x98]  (buffer count)
-         0x30, 0xE4,                         # 72: xor ah, ah
-         0x8B, 0xD8,                         # 74: mov bx, ax
-         0x88, 0x97, 0xF6, 0x2D,             # 76: mov [bx+0x2DF6], dl  (1st tap)
-         0x43,                               # 80: inc bx
-         0x88, 0x97, 0xF6, 0x2D,             # 81: mov [bx+0x2DF6], dl  (2nd tap)
-         0x80, 0x06, 0x98, 0x00, 0x02,       # 85: add byte [0x98], 2
-         # done (90): restore regs, return to ISR epilogue (POP DS)
-         0x59,                               # 90: pop cx
-         0x5B,                               # 91: pop bx
-         0x58,                               # 92: pop ax
-         0xE9, 0x9B, 0xD7,                   # 93: jmp near → IP 0x5F89
+         0xA1, 0x6C, 0x2E,                   #  3: mov ax, [0x2E6C]  (scan code)
+         # --- merged check: run keys then direction keys ---
+         0x3C, 0x2E,                         #  6: cmp al, 0x2E  (P1 run: C)
+         0x74, 0x20,                         #  8: je p1_run  (→42)
+         0x3C, 0x34,                         # 10: cmp al, 0x34  (P2 run: .)
+         0x74, 0x22,                         # 12: je p2_run  (→48)
+         0x3C, 0x51,                         # 14: cmp al, 0x51  (P3 run: Num3)
+         0x74, 0x24,                         # 16: je p3_run  (→54)
+         0x3C, 0x1E,                         # 18: cmp al, 0x1E  (P1 left: A)
+         0x74, 0x5D,                         # 20: je .track  (→115)
+         0x3C, 0x20,                         # 22: cmp al, 0x20  (P1 right: D)
+         0x74, 0x59,                         # 24: je .track  (→115)
+         0x3C, 0x24,                         # 26: cmp al, 0x24  (P2 left: J)
+         0x74, 0x55,                         # 28: je .track  (→115)
+         0x3C, 0x26,                         # 30: cmp al, 0x26  (P2 right: L)
+         0x74, 0x51,                         # 32: je .track  (→115)
+         0x3C, 0x4B,                         # 34: cmp al, 0x4B  (P3 left: Num4)
+         0x74, 0x4D,                         # 36: je .track  (→115)
+         0x3C, 0x4D,                         # 38: cmp al, 0x4D  (P3 right: Num6)
+         0x75, 0x58,                         # 40: jne done  (→130)
+         # (fall through to .track if 0x4D matched)
+         # --- p1_run (42): right=D(0x20), slot=0 ---
+         0xB3, 0x20,                         # 42: mov bl, 0x20
+         0xB2, 0x00,                         # 44: mov dl, 0
+         0xEB, 0x0A,                         # 46: jmp inject (→58)
+         # --- p2_run (48): right=L(0x26), slot=1 ---
+         0xB3, 0x26,                         # 48: mov bl, 0x26
+         0xB2, 0x01,                         # 50: mov dl, 1
+         0xEB, 0x04,                         # 52: jmp inject (→58)
+         # --- p3_run (54): right=Num6(0x4D), slot=2 ---
+         0xB3, 0x4D,                         # 54: mov bl, 0x4D
+         0xB2, 0x02,                         # 56: mov dl, 2
+         # --- inject (58): CL = BL-2 (left key), check held dirs ---
+         0x8A, 0xCB,                         # 58: mov cl, bl
+         0x80, 0xE9, 0x02,                   # 60: sub cl, 2  (left = right - 2)
+         0x30, 0xFF,                         # 63: xor bh, bh
+         # .check_dir (65):
+         0x53,                               # 65: push bx
+         0xD1, 0xE3,                         # 66: shl bx, 1
+         0x83, 0xBF, 0x6E, 0x2E, 0x00,      # 68: cmp word [bx+0x2E6E], 0
+         0x5B,                               # 73: pop bx
+         0x75, 0x14,                         # 74: jne write_dir (→96)
+         0x3A, 0xD9,                         # 76: cmp bl, cl
+         0x74, 0x04,                         # 78: je idle_fallback (→84)
+         0x8A, 0xD9,                         # 80: mov bl, cl
+         0xEB, 0xED,                         # 82: jmp .check_dir (→65)
+         # --- idle_fallback (84): load last walked direction ---
+         0x30, 0xF6,                         # 84: xor dh, dh
+         0x8B, 0xDA,                         # 86: mov bx, dx
+         0x8A, 0x9F, 0x30, 0x2F,             # 88: mov bl, [bx+0x2F30]
+         0x08, 0xDB,                         # 92: or bl, bl
+         0x74, 0x22,                         # 94: jz done (→130)
+         # --- write_dir (96): inject double-tap ---
+         0x8A, 0xD3,                         # 96: mov dl, bl
+         0x8A, 0xF2,                         # 98: mov dh, dl  (DX = dir:dir)
+         0x31, 0xDB,                         #100: xor bx, bx
+         0x8A, 0x1E, 0x98, 0x00,             #102: mov bl, [0x98]
+         0x89, 0x97, 0xF6, 0x2D,             #106: mov [bx+0x2DF6], dx  (word)
+         0x80, 0x06, 0x98, 0x00, 0x02,       #110: add byte [0x98], 2
+         # --- .track (115): store walk direction per player ---
+         0xBB, 0x30, 0x2F,                   #115: mov bx, 0x2F30
+         0x3C, 0x22,                         #118: cmp al, 0x22
+         0x72, 0x06,                         #120: jb .store (→128)
+         0x43,                               #122: inc bx
+         0x3C, 0x40,                         #123: cmp al, 0x40
+         0x72, 0x01,                         #125: jb .store (→128)
+         0x43,                               #127: inc bx
+         # .store (128):
+         0x88, 0x07,                         #128: mov [bx], al
+         # --- done (130): return to ISR epilogue ---
+         0xE9, 0x76, 0xD7,                   #130: jmp near → IP 0x5F89
     )
 
-    # easy_run cave: original 96 bytes from Handler E tail (for revert)
+    # easy_run cave: original 133 bytes from Handler E tail (for revert)
     a.label('easy_run_cave_orig')
     a.db(0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7, 0xEA, 0x8B,
          0xD8, 0x80, 0xBF, 0x2C, 0x4D, 0x78, 0x75, 0x18,
@@ -911,7 +935,12 @@ def build_mods_com():
          0xEA, 0x8B, 0xD8, 0x80, 0xBF, 0x2E, 0x4D, 0x61,
          0x75, 0x38, 0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7,
          0xEA, 0x8B, 0xD8, 0x80, 0xBF, 0x2D, 0x4D, 0x64,
-         0x75, 0x28, 0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7)
+         0x75, 0x28, 0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7,
+         0xEA, 0x8B, 0xD8, 0x80, 0xBF, 0x2C, 0x4D, 0x78,
+         0x75, 0x18, 0x8B, 0xC6, 0xBA, 0x05, 0x00, 0xF7,
+         0xEA, 0x8B, 0xD8, 0x80, 0xBF, 0x2B, 0x4D, 0x77,
+         0x75, 0x08, 0x57, 0x56, 0x0E, 0xE8, 0x4A, 0xF1,
+         0x59, 0x59, 0x5F, 0x5E, 0x5D)
 
     a.label('read_buffer')
 

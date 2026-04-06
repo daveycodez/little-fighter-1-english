@@ -231,6 +231,10 @@ def build_mods_com():
     a.call('search')
     a.mov_mem_al('flag_fast_mp')
 
+    a.mov_r16_label('si', 'str_cheap_supers')
+    a.call('search')
+    a.mov_mem_al('flag_cheap_supers')
+
     a.mov_r16_label('si', 'str_easy_supers')
     a.call('search')
     a.mov_mem_al('flag_easy_supers')
@@ -350,6 +354,47 @@ def build_mods_com():
     a.mov_r16_imm('dx', 0xB1D7)
     a.mov_r16_label('si', 'nops')
     a.mov_r16_label('di', 'sub_mp_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+
+    # cheap_supers: halve cost in push/compute/pop blocks before every CMP and SUB
+    # Uses IMUL BX, SI, 0x34 (186+) to save space for SHR AX, 1
+    for cx_hi, dx_lo in [(0x0000, 0x9D73), (0x0000, 0xC35B), (0x0000, 0xCAEF),
+                          (0x0001, 0x083E), (0x0001, 0x09CD), (0x0001, 0x9FE9),
+                          (0x0000, 0x8DE6), (0x0000, 0xC86C), (0x0000, 0xC94F),
+                          (0x0000, 0xCB94), (0x0001, 0x0880), (0x0001, 0x0A16)]:
+        a.mov_al_mem('flag_cheap_supers')
+        a.mov_r16_imm('cx', cx_hi)
+        a.mov_r16_imm('dx', dx_lo)
+        a.mov_r16_label('si', 'cheap_cost_on')
+        a.mov_r16_label('di', 'cheap_cost_off')
+        a.mov_r8_imm('bl', 11)
+        a.call('apply_patch')
+
+    # cheap_supers: DI-variant mana check at file 0xE83E
+    a.mov_al_mem('flag_cheap_supers')
+    a.mov_r16_imm('cx', 0x0000)
+    a.mov_r16_imm('dx', 0xE83E)
+    a.mov_r16_label('si', 'cheap_cost_on_di')
+    a.mov_r16_label('di', 'cheap_cost_off_di')
+    a.mov_r8_imm('bl', 11)
+    a.call('apply_patch')
+
+    # cheap_supers: hardcoded 25 MP → 12 MP at file 0x1187E
+    a.mov_al_mem('flag_cheap_supers')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x187E)
+    a.mov_r16_label('si', 'sub_mp_12')
+    a.mov_r16_label('di', 'sub_mp_25_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+
+    # cheap_supers: hardcoded 50 MP → 25 MP at file 0x156EC
+    a.mov_al_mem('flag_cheap_supers')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x56EC)
+    a.mov_r16_label('si', 'sub_mp_25_orig')
+    a.mov_r16_label('di', 'sub_mp_50_orig')
     a.mov_r8_imm('bl', 5)
     a.call('apply_patch')
 
@@ -481,6 +526,19 @@ def build_mods_com():
     a.mov_r8_imm('bl', 133)
     a.call('apply_patch')
 
+    # cheap_supers + easy_supers: halve the 50 MP summon cost in handler H
+    a.mov_al_mem('flag_easy_supers')
+    a.cmp_al_imm(1)
+    a.jne('skip_h_cheap')
+    a.mov_al_mem('flag_cheap_supers')
+    a.mov_r16_imm('cx', 0x0000)
+    a.mov_r16_imm('dx', 0x9C6D)
+    a.mov_r16_label('si', 'sub_mp_25_orig')
+    a.mov_r16_label('di', 'sub_mp_50_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+    a.label('skip_h_cheap')
+
     # free_supers + easy_supers: NOP the 50 MP summon cost in handler H
     # Only relevant when easy_supers=1 (handler H has the deduction at byte 89)
     a.mov_al_mem('flag_easy_supers')
@@ -596,6 +654,7 @@ def build_mods_com():
     a.label('str_all_weapons');a.db("all_weapons=1\x00")
     a.label('str_speed_hack');a.db("speed_hack=1\x00")
     a.label('str_fast_mp'); a.db("fast_mp=1\x00")
+    a.label('str_cheap_supers');a.db("cheap_supers=1\x00")
     a.label('str_easy_supers');a.db("easy_supers=1\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
     a.label('julian_off');   a.db(0x74, 0x06)
@@ -621,10 +680,18 @@ def build_mods_com():
     a.label('flag_all_weapons'); a.db(0)
     a.label('flag_speed_hack'); a.db(0)
     a.label('flag_fast_mp'); a.db(0)
+    a.label('flag_cheap_supers'); a.db(0)
     a.label('flag_easy_supers'); a.db(0)
     a.label('rate_value');   a.dw(0x012C)
     a.label('cur_handle');   a.dw(0)
     a.label('bytes_read');   a.dw(0)
+
+    # cheap_supers: IMUL BX,SI,0x34 + SHR AX,1 replaces push/mov/imul/mov/pop
+    a.label('cheap_cost_on');   a.db(0x50, 0x6B, 0xDE, 0x34, 0x58, 0xD1, 0xE8, 0x90, 0x90, 0x90, 0x90)
+    a.label('cheap_cost_off');  a.db(0x50, 0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x58)
+    a.label('cheap_cost_on_di');a.db(0x50, 0x6B, 0xDF, 0x34, 0x58, 0xD1, 0xE8, 0x90, 0x90, 0x90, 0x90)
+    a.label('cheap_cost_off_di');a.db(0x50, 0x8B, 0xC7, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x58)
+    a.label('sub_mp_12');       a.db(0x83, 0xAF, 0x20, 0x34, 0x0C)
 
     a.label('fast_mp_on');     a.db(0x8B, 0xC6, 0xB2, 0x34, 0xF7, 0xEA, 0x8B, 0xD8, 0x83, 0x87, 0x20, 0x34, 0x02)
     a.label('fast_mp_off');   a.db(0x8B, 0xC6, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0xFF, 0x87, 0x20, 0x34)

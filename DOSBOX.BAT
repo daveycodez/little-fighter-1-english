@@ -1,0 +1,3 @@
+@ECHO OFF
+PLAY.COM
+exit

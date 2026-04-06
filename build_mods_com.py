@@ -481,6 +481,20 @@ def build_mods_com():
     a.mov_r8_imm('bl', 133)
     a.call('apply_patch')
 
+    # free_supers + easy_supers: NOP the 50 MP summon cost in handler H
+    # Only relevant when easy_supers=1 (handler H has the deduction at byte 89)
+    a.mov_al_mem('flag_easy_supers')
+    a.cmp_al_imm(1)
+    a.jne('skip_h_free')
+    a.mov_al_mem('flag_free_supers')
+    a.mov_r16_imm('cx', 0x0000)
+    a.mov_r16_imm('dx', 0x9C6D)
+    a.mov_r16_label('si', 'nops')
+    a.mov_r16_label('di', 'sub_mp_50_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+    a.label('skip_h_free')
+
     a.mov_bx_mem('cur_handle')
     a.mov_r8_imm('ah', 0x3E)
     a.int21()
@@ -733,9 +747,8 @@ def build_mods_com():
          0x5B,                               # 83: pop bx
          0x3D, 0x05, 0x00,                   # 84: cmp ax, 5
          0x74, 0x0D,                         # 87: jz has_weapon  (+13 → byte 102)
-         # Not state 5 → SUMMON: set state 0x0E10 (creates sword)
-         # MP deduction handled by game's own code (patched by free_supers)
-         0x90, 0x90, 0x90, 0x90, 0x90,      # 89: nop (was: sub word [bx+0x3420], 50)
+         # Not state 5 → SUMMON: deduct 50 MP, set state 0x0E10
+         0x83, 0xAF, 0x20, 0x34, 0x32,      # 89: sub word [bx+0x3420], 50
          0xC7, 0x87, 0x14, 0x34, 0x10, 0x0E, # 94: mov word [bx+0x3414], 0x0E10
          0xEB, 0x0A,                         # 100: jmp short done  (+10 → byte 112)
          # has_weapon (state 5) → WEAPON ATTACK via execute_super

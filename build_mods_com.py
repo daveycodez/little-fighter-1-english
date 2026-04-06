@@ -4,10 +4,11 @@ Build script: generates MODS.COM (DOS patcher + optional BGM/game-speed TSR)
 and patches PLAY.COM.
 
 When bgm=1 in mods.cfg, MODS.COM installs a TSR that plays baked-in MIDI
-data through MPU-401 UART mode.  The PIT always runs at 200 Hz for
-jitter-free music; a chain prescaler in the ISR throttles BIOS tick
-updates to the configured game_speed.  When bgm=0, PIT is reprogrammed
-directly to game_speed with no TSR.
+data through MPU-401 UART mode.  PIT rate matches the build (game_speed×N
+Hz for jitter-free music); a chain prescaler in the ISR throttles BIOS
+tick updates to the configured game_speed.  F11 toggles mute/unmute
+(All Notes Off on mute).  When bgm=0, PIT is reprogrammed directly to
+game_speed with no TSR.
 
 Developer tool only — end users never run this.
 """
@@ -350,16 +351,34 @@ def build_mods_com(cooked_midi):
     a.db(0xFF, 0x1E)             # call far [old_08_off]
     a._fixup('abs16', 'old_08_off'); a._word(0)
 
-    # ---- Poll port 0x60 for mute toggle (chain ticks only) ----
+    # ---- F11: mute/unmute BGM (bgm=1 only; chain ticks only) ----
     a.db(0xE4, 0x60)            # in al, 0x60
     a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)  # cmp al, [prev_scan]
     a.je('isr_midi')             # same scan code — skip
     a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)        # mov [prev_scan], al
     a.cmp_al_imm(0x57)          # F11 make code?
     a.jne('isr_midi')
-    # Toggle muted
+    # Toggle muted; if newly muted, All Notes Off (CC#123 on all channels)
     a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)  # XOR byte [muted], 1
     a.db(0x01)
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
+    a.db(0x00)
+    a.je('isr_midi')            # unmuted — no anoff
+    a.push('bx');  a.push('cx')
+    a.mov_r16_imm('cx', 16)
+    a.xor_r8('bl')
+    a.label('isr_mute_anoff')
+    a.mov_r8_imm('al', 0xB0)
+    a.db(0x08, 0xD8)            # or al, bl
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEE)                   # out dx, al
+    a.mov_r8_imm('al', 0x7B)
+    a.db(0xEE)                   # All Notes Off
+    a.xor_r8('al')
+    a.db(0xEE)                   # value 0
+    a.db(0xFE, 0xC3)            # inc bl
+    a.loop('isr_mute_anoff')
+    a.pop('cx');  a.pop('bx')
     a.jmp('isr_midi')
 
     a.label('isr_no_chain')
@@ -610,7 +629,7 @@ def build_mods_com(cooked_midi):
 
     a.label('gs_done')
 
-    # When bgm=1: PIT runs at 200 Hz for jitter-free MIDI playback.
+    # When bgm=1: TSR + PIT/chain_thresh from build; F11 = mute/unmute.
     # Game tick rate is throttled by the chain prescaler in the ISR.
     a.mov_al_mem('flag_bgm')
     a.cmp_al_imm(1)
@@ -1181,6 +1200,8 @@ def build_mods_com(cooked_midi):
     a.label('jmp_short_byte');a.db(0xEB)
 
     # easy_supers: per-handler 86-byte patches
+    # Do NOT gate on entity index (SI): SI is which fighter slot in the match (can be 4+
+    # for "character 5" etc.). Which *controls* apply is [bx+0x3404] (P1/P2/P3 slot).
     easy_super_prefix = [
          0x55,
          0x8B, 0xEC,
@@ -1188,8 +1209,7 @@ def build_mods_com(cooked_midi):
          0x57,
          0x8B, 0x76, 0x06,
          0x8B, 0x7E, 0x08,
-         0x83, 0xFE, 0x03,
-         0x7D, 0x39,
+         0x90, 0x90, 0x90, 0x90, 0x90,  # was: cmp si,3 / jge skip (wrong for 4+ fighters)
          0xEB, 0x04,
          0x00, 0x00,
          0x00, 0x00,
@@ -1245,8 +1265,7 @@ def build_mods_com(cooked_midi):
          0x57,
          0x8B, 0x76, 0x06,
          0x8B, 0x7E, 0x08,
-         0x83, 0xFE, 0x03,
-         0x7D, 0x60,
+         0x90, 0x90, 0x90, 0x90, 0x90,  # was: cmp si,3 / jge skip
          0xEB, 0x04,
          0x00, 0x00,
          0x00, 0x00,

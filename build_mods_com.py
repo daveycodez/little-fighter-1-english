@@ -419,6 +419,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.cld()
     a.db(0x8E, 0xC0)            # MOV ES, AX
     a.db(0x8B, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    a.mov_r16_imm('bx', 24)    # BX = bytes budget per tick
 
     a.label('isr_frame')
     a.db(0x26); a.lodsb()       # ES: LODSB — count byte
@@ -426,6 +427,15 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_rr8('cl', 'al')
     a.jcxz('isr_next_wait')
 
+    # Rate limit: defer if over budget AND we've already sent something this tick
+    a.db(0x39, 0xCB)            # CMP BX, CX  (budget vs frame size)
+    a.jnc('isr_send_ok')        # budget >= frame → send (JNB = JNC)
+    a.db(0x83, 0xFB, 24)       # CMP BX, 24  (full budget = haven't sent anything yet?)
+    a.je('isr_send_ok')         # first frame always sends (avoid deadlock)
+    a.jmp('isr_defer')          # already sent some → defer rest to next tick
+    a.label('isr_send_ok')
+
+    a.db(0x29, 0xCB)            # SUB BX, CX  (budget -= count)
     a.mov_r16_imm('dx', 0x0330)
     a.label('isr_send')
     a.db(0x26); a.lodsb()       # ES: LODSB — MIDI byte
@@ -440,6 +450,13 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.je('isr_frame')
 
     a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    a.jmp('isr_midi_done')
+
+    # Defer: back SI to before this frame's count byte, resume next tick
+    a.label('isr_defer')
+    a.dec16('si')               # un-read the count byte
+    a.mov_mem16_imm('wait_ctr', 1)
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
 
     a.label('isr_midi_done')

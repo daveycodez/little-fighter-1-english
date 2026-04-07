@@ -1061,6 +1061,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.call('search')
     a.mov_mem_al('flag_no_mp_hit')
 
+    a.mov_r16_label('si', 'str_practice')
+    a.call('search')
+    a.mov_mem_al('flag_practice')
+
     a.mov_r16_label('si', 'str_bal_julian')
     a.call('search')
     a.mov_mem_al('flag_bal_julian')
@@ -1508,6 +1512,17 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
         a.mov_r8_imm('bl', 4)
         a.call('apply_patch')
 
+    # practice: skip AI function call (JNZ "not target" → JMP, always skip AI)
+    # The game loop processes all entities; this makes every entity take the
+    # "not the AI target" branch, so the AI decision call is never reached.
+    a.mov_al_mem('flag_practice')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0xAB77)
+    a.mov_r16_label('si', 'jmp_byte')
+    a.mov_r16_label('di', 'jne_byte')
+    a.mov_r8_imm('bl', 1)
+    a.call('apply_patch')
+
     # balanced_julian: NOP Julian's passive HP regen (INC [BX+3416h] at 0x15282)
     a.mov_al_mem('flag_bal_julian')
     a.mov_r16_imm('cx', 0x0001)
@@ -1726,6 +1741,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('str_cheap_supers');a.db("cheap_supers=1\x00")
     a.label('str_easy_supers');a.db("easy_supers=1\x00")
     a.label('str_no_mp_hit');a.db("no_mp_on_hit=1\x00")
+    a.label('str_practice');a.db("practice=1\x00")
     a.label('str_bal_julian');a.db("balanced_julian=1\x00")
     a.label('str_bgm');      a.db("bgm=1\x00")
     a.label('str_game_speed'); a.db("game_speed=\x00")
@@ -1741,6 +1757,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('jne_byte');     a.db(0x75)
     a.label('jng_byte');     a.db(0x7E)
     a.label('jnl_byte');     a.db(0x7D)
+    a.label('jl_byte');      a.db(0x7C)
     a.label('wtype_all');    a.db(0x0C)
     a.label('wtype_orig');   a.db(0x0A)
     a.label('flag_julian');  a.db(0)
@@ -1756,6 +1773,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('flag_cheap_supers'); a.db(0)
     a.label('flag_easy_supers'); a.db(0)
     a.label('flag_no_mp_hit'); a.db(0)
+    a.label('flag_practice'); a.db(0)
     a.label('flag_bal_julian'); a.db(0)
     a.label('flag_bgm');     a.db(0)
     a.label('rate_value');   a.dw(0x012C)

@@ -255,13 +255,14 @@ def parse_midi(path):
 # Format: [u16 wait_ticks] [u8 count] [bytes...] ... [u16 0xFFFF = loop]
 # ---------------------------------------------------------------------------
 
-def cook_events(events, div, target_hz=BASE_HZ):
+def cook_events(events, div, target_hz=BASE_HZ, strip_volume=False):
     us_per_tick = 1e6 / target_hz
 
     tempo = 500000
     last_t = 0
     last_us = 0.0
 
+    cc7_seen = set()
     timed = []
     for tick, kind, data in events:
         us_per_mt = float(tempo) / float(div)
@@ -269,6 +270,11 @@ def cook_events(events, div, target_hz=BASE_HZ):
         if kind == 'T':
             last_t, last_us, tempo = tick, us, data
         elif kind == 'M':
+            if strip_volume and len(data) >= 2 and (data[0] & 0xF0) == 0xB0 and data[1] == 7:
+                ch = data[0] & 0x0F
+                if ch in cc7_seen:
+                    continue
+                cc7_seen.add(ch)
             timed.append((us, data))
 
     groups = OrderedDict()
@@ -307,7 +313,8 @@ def cook_events(events, div, target_hz=BASE_HZ):
 # Build MODS.COM
 # ---------------------------------------------------------------------------
 
-def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
+def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
+    NUM_TRACKS = 4  # FUSION, TRANSFORMED, FUTURE, CATASTROPHE
     a = Asm16()
 
     # =================================================================
@@ -534,26 +541,31 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.label('reload_fight_bgm')
     a.mov_ax_mem('fight_seg')
     a.db(0x0B, 0xC0)            # OR AX, AX
-    a.je('rfb_done')             # no allocation → nothing to reload
+    a.jne('rfb_go')
+    a.jmp_near('rfb_done')
+    a.label('rfb_go')
     a.push('bx')
     a.push('cx')
     a.push('dx')
     a.db(0x06)                   # push es
-    # Random pick excluding last_pick: BIOS tick % 2 → index into {0,1,2}\{last_pick}
+    # Random pick excluding last_pick: BIOS tick % (NUM_TRACKS-1) → remap
     a.db(0x06)                   # push es
     a.xor_r16('ax')
     a.db(0x8E, 0xC0)            # MOV ES, AX
     a.db(0x26, 0xA1, 0x6C, 0x04)  # MOV AX, ES:[046Ch]
     a.db(0x07)                   # pop es
     a.db(0x32, 0xC4)            # XOR AL, AH
-    a.db(0x24, 0x01)            # AND AL, 1  → 0 or 1
-    # Map {0,1} to {0,1,2}\{last_pick}: pick candidate = AL; if candidate >= last_pick, candidate++
+    a.xor_r16('dx')
     a.mov_r8_imm('ah', 0)
+    a.mov_r16_imm('bx', NUM_TRACKS - 1)
+    a.db(0xF7, 0xF3)            # DIV BX → DX = remainder 0..(NUM_TRACKS-2)
+    a.mov_rr8('al', 'dl')
+    # Map to {0..NUM_TRACKS-1}\{last_pick}: if candidate >= last_pick, candidate++
     a.db(0x3A, 0x06); a._fixup('abs16', 'last_pick'); a._word(0)  # CMP AL, [last_pick]
     a.jb('rfb_no_bump')
     a.db(0xFE, 0xC0)            # INC AL
     a.label('rfb_no_bump')
-    a.call('pick_fight_file')    # AL=pick → sets DX, CX, last_pick
+    a.call('pick_fight_file')
     # Call real DOS directly (PUSHF + CALL FAR) to avoid re-entering our INT 21h hook
     a.label('rfb_open')
     a.db(0x89, 0x0E); a._fixup('abs16', 'fight_read_sz'); a._word(0)  # save CX
@@ -575,7 +587,12 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.mov_r16_label('dx', 'fn_trn_bgm_sys')
     a.jmp('rfb_retry')
     a.label('rfb_nf3')
+    a.db(0x81, 0xFA); a._fixup('abs16', 'fn_fut_bgm'); a._word(0)
+    a.jne('rfb_nf4')
     a.mov_r16_label('dx', 'fn_fut_bgm_sys')
+    a.jmp('rfb_retry')
+    a.label('rfb_nf4')
+    a.mov_r16_label('dx', 'fn_cat_bgm_sys')
     a.label('rfb_retry')
     a.mov_r8_imm('ah', 0x3D)
     a.mov_r8_imm('al', 0x00)
@@ -619,8 +636,14 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.mov_r16_imm('cx', trn_size)
     a.ret()
     a.label('pff_fut')
+    a.cmp_al_imm(2)
+    a.jne('pff_cat')
     a.mov_r16_label('dx', 'fn_fut_bgm')
     a.mov_r16_imm('cx', fut_size)
+    a.ret()
+    a.label('pff_cat')
+    a.mov_r16_label('dx', 'fn_cat_bgm')
+    a.mov_r16_imm('cx', cat_size)
     a.ret()
 
     # Bare token at DS:SI is a path component? CF=1 if SI==DX or [SI-1] is \ or /
@@ -841,10 +864,12 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     # -- BGM file paths (resident — needed by reload_fight_bgm after TSR) --
     a.label('fn_fus_bgm');     a.db("FUSION.BGM\x00")
     a.label('fn_fus_bgm_sys'); a.db("SYS\\FUSION.BGM\x00")
-    a.label('fn_trn_bgm');     a.db("TRANS.BGM\x00")
-    a.label('fn_trn_bgm_sys'); a.db("SYS\\TRANS.BGM\x00")
+    a.label('fn_trn_bgm');     a.db("TRANSFRM.BGM\x00")
+    a.label('fn_trn_bgm_sys'); a.db("SYS\\TRANSFRM.BGM\x00")
     a.label('fn_fut_bgm');     a.db("FUTURE.BGM\x00")
     a.label('fn_fut_bgm_sys'); a.db("SYS\\FUTURE.BGM\x00")
+    a.label('fn_cat_bgm');     a.db("CATSTRPH.BGM\x00")
+    a.label('fn_cat_bgm_sys'); a.db("SYS\\CATSTRPH.BGM\x00")
 
     # -- Cooked MIDI (resident): MAIN only (fight streams loaded into allocated memory)
     a.label('event_data')
@@ -898,7 +923,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.int21()
 
     # Pick the largest of all fight stream sizes for the allocation
-    fight_max = max(fus_size, trn_size, fut_size)
+    fight_max = max(fus_size, trn_size, fut_size, cat_size)
     fight_paras = (fight_max + 15) >> 4
     a.mov_r16_imm('bx', fight_paras)
     a.mov_r8_imm('ah', 0x48)
@@ -906,7 +931,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.jc_far('skip_bgm_alloc')
     a.mov_mem_ax('fight_seg')
 
-    # Random first pick: 0=FUSION, 1=TRANS, 2=FUTURE from BIOS tick % 3
+    # Random first pick: 0-3 from BIOS tick % NUM_TRACKS
     a.push('dx')
     a.db(0x06)                   # push es
     a.xor_r16('ax')
@@ -914,11 +939,11 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.db(0x26, 0xA1, 0x6C, 0x04)  # MOV AX, ES:[046Ch]
     a.db(0x07)                   # pop es
     a.xor_r16('dx')
-    a.mov_r16_imm('bx', 3)
-    a.db(0xF7, 0xF3)            # DIV BX → DX = remainder 0/1/2
+    a.mov_r16_imm('bx', NUM_TRACKS)
+    a.db(0xF7, 0xF3)            # DIV BX → DX = remainder
     a.mov_rr8('al', 'dl')
     a.pop('dx')
-    a.call('pick_fight_file')    # AL=pick → sets DX, CX, last_pick
+    a.call('pick_fight_file')
 
     # CX = bytes to read, DX = bare filename. Try bare first, fallback to SYS\.
     a.label('open_fight_bgm')
@@ -940,7 +965,12 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size):
     a.mov_r16_label('dx', 'fn_trn_bgm_sys')
     a.jmp('init_retry')
     a.label('init_nf3')
+    a.db(0x81, 0xFA); a._fixup('abs16', 'fn_fut_bgm'); a._word(0)
+    a.jne('init_nf4')
     a.mov_r16_label('dx', 'fn_fut_bgm_sys')
+    a.jmp('init_retry')
+    a.label('init_nf4')
+    a.mov_r16_label('dx', 'fn_cat_bgm_sys')
     a.label('init_retry')
     a.mov_r8_imm('ah', 0x3D)
     a.mov_r8_imm('al', 0x00)
@@ -2084,10 +2114,25 @@ if __name__ == "__main__":
         print("  SYS/FUTURE.mid not found — slot uses silent stub")
         cooked_future = silent
 
+    catastrophe_path = os.path.join(GAME_DIR, "SYS", "CATASTROPHE.MID")
+    if os.path.exists(catastrophe_path):
+        print("Parsing CATASTROPHE.MID...")
+        caev, cadiv = parse_midi(catastrophe_path)
+        # Trim to beat 512 (~141s) to fit memory — full song is too large
+        cut_tick = 512 * cadiv
+        caev_trimmed = [(t, k, d) for t, k, d in caev if t <= cut_tick or k == 'T']
+        print(f"Cooking CATASTROPHE (target rate: {COOK_HZ:.1f} Hz, trimmed to ~141s)...")
+        cooked_catastrophe = cook_events(caev_trimmed, cadiv, target_hz=COOK_HZ)
+        print(f"  Cooked CATASTROPHE: {len(cooked_catastrophe)} bytes")
+    else:
+        print("  SYS/CATASTROPHE.MID not found — slot uses silent stub")
+        cooked_catastrophe = silent
+
     com_limit = 65280
 
     print("Building MODS.COM (MAIN + router)...")
-    mods_bin = build_mods_com(cooked_main, len(cooked_fusion), len(cooked_transformed), len(cooked_future))
+    mods_bin = build_mods_com(cooked_main, len(cooked_fusion), len(cooked_transformed),
+                              len(cooked_future), len(cooked_catastrophe))
     if len(mods_bin) > com_limit:
         print(f"  ERROR: MODS.COM too large ({len(mods_bin)} bytes, limit ~{com_limit})")
         sys.exit(1)
@@ -2099,13 +2144,17 @@ if __name__ == "__main__":
     open(os.path.join(GAME_DIR, "SYS", "FUSION.BGM"), "wb").write(cooked_fusion)
     print(f"  Written {len(cooked_fusion)} bytes")
 
-    print("Writing SYS/TRANS.BGM...")
-    open(os.path.join(GAME_DIR, "SYS", "TRANS.BGM"), "wb").write(cooked_transformed)
+    print("Writing SYS/TRANSFRM.BGM...")
+    open(os.path.join(GAME_DIR, "SYS", "TRANSFRM.BGM"), "wb").write(cooked_transformed)
     print(f"  Written {len(cooked_transformed)} bytes")
 
     print("Writing SYS/FUTURE.BGM...")
     open(os.path.join(GAME_DIR, "SYS", "FUTURE.BGM"), "wb").write(cooked_future)
     print(f"  Written {len(cooked_future)} bytes")
+
+    print("Writing SYS/CATSTRPH.BGM...")
+    open(os.path.join(GAME_DIR, "SYS", "CATSTRPH.BGM"), "wb").write(cooked_catastrophe)
+    print(f"  Written {len(cooked_catastrophe)} bytes")
 
     print("Patching PLAY.COM...")
     if patch_play_com():

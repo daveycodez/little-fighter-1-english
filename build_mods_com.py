@@ -2119,7 +2119,12 @@ if __name__ == "__main__":
     if os.path.exists(transformed_path):
         print("Parsing TRANSFORMED.MID...")
         tev, tdiv = parse_midi(transformed_path)
-        print(f"Cooking TRANSFORMED (target rate: {COOK_HZ:.1f} Hz)...")
+        # Strip leading silence — shift events so first audible note is at tick 0
+        first_note = next((t for t, k, d in tev if k == 'M'
+                           and (d[0] & 0xF0) == 0x90 and len(d) >= 3 and d[2] > 0), 0)
+        if first_note > 0:
+            tev = [(max(0, t - first_note), k, d) for t, k, d in tev]
+        print(f"Cooking TRANSFORMED (target rate: {COOK_HZ:.1f} Hz, trimmed {first_note} ticks silence)...")
         cooked_transformed = cook_events(tev, tdiv, target_hz=COOK_HZ)
         print(f"  Cooked TRANSFORMED: {len(cooked_transformed)} bytes")
     else:

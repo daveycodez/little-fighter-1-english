@@ -7,8 +7,9 @@ When bgm=1 in mods.cfg, MODS.COM installs a TSR that plays baked-in MIDI
 data through MPU-401 UART mode.  PIT rate matches the build (game_speed×N
 Hz for jitter-free music); a chain prescaler in the ISR throttles BIOS
 tick updates to the configured game_speed.  F11 toggles mute/unmute
-(All Notes Off on mute).  When bgm=0, PIT is reprogrammed directly to
-game_speed with no TSR.
+(All Notes Off on mute).  INT 21h hook: EXEC of FUSION track when
+FIGHT.EXE runs; return to MAIN after WAIT (AH=4Dh).  When bgm=0, PIT is
+reprogrammed directly to game_speed with no TSR.
 
 Developer tool only — end users never run this.
 """
@@ -308,14 +309,16 @@ def cook_events(events, div, target_hz=BASE_HZ):
 # Build MODS.COM
 # ---------------------------------------------------------------------------
 
-def build_mods_com(cooked_midi):
+def build_mods_com(cooked_main, cooked_fusion):
     a = Asm16()
 
     # =================================================================
     #  RESIDENT SECTION (stays in memory when TSR)
     # =================================================================
 
-    a.jmp_near('init')
+    # Resident grew past ±32K of entry; use register indirect jmp to init
+    a.mov_r16_label('bx', 'init')
+    a.db(0xFF, 0xE3)            # jmp bx
 
     # -- Resident data --
     a.label('old_08_off');   a.dw(0)
@@ -327,6 +330,10 @@ def build_mods_com(cooked_midi):
     a.label('chain_thresh'); a.dw(728)
     a.label('muted');        a.db(0)
     a.label('prev_scan');    a.db(0)
+    a.label('track_id');     a.db(0)   # 0=MAIN, 1=FUSION (FIGHT)
+    a.label('in_fight');     a.db(0)   # 1 after EXEC FIGHT.EXE until AH=4Dh
+    a.label('old_21_off');   a.dw(0)
+    a.label('old_21_seg');   a.dw(0)
 
     # -- Resident ISR: INT 08h handler --
     # PIT at game_speed×4 Hz with bgm (perfect 4:1 at default 18.2 Hz)
@@ -443,7 +450,14 @@ def build_mods_com(cooked_midi):
     a.db(0xFE, 0xC3)            # inc bl
     a.loop('isr_anoff')
 
+    a.db(0x80, 0x3E); a._fixup('abs16', 'track_id'); a._word(0)  # CMP byte [track_id], 0
+    a.db(0x00)
+    a.je('isr_rewind_main')
+    a.mov_r16_label('si', 'event_data_fusion')
+    a.jmp('isr_rewind_go')
+    a.label('isr_rewind_main')
     a.mov_r16_label('si', 'event_data')
+    a.label('isr_rewind_go')
     a.db(0xAD)                   # lodsw — first wait of new loop
     a.db(0x85, 0xC0)            # test ax, ax
     a.je('isr_frame')
@@ -451,9 +465,146 @@ def build_mods_com(cooked_midi):
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
     a.jmp('isr_done')
 
+    # -- INT 21h: FIGHT.EXE → FUSION; AH=4Dh after exec → MAIN --
+    a.label('all_notes_off_res')
+    a.push('bx');  a.push('cx')
+    a.mov_r16_imm('cx', 16)
+    a.xor_r8('bl')
+    a.label('anoff_res')
+    a.mov_r8_imm('al', 0xB0)
+    a.db(0x08, 0xD8)            # or al, bl
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEE)
+    a.mov_r8_imm('al', 0x7B)
+    a.db(0xEE)
+    a.xor_r8('al')
+    a.db(0xEE)
+    a.db(0xFE, 0xC3)            # inc bl
+    a.loop('anoff_res')
+    a.pop('cx');  a.pop('bx')
+    a.ret()
+
+    a.label('music_switch_main')
+    a.call('all_notes_off_res')
+    a.db(0x0E, 0x1F)            # push cs; pop ds
+    a.mov_r16_label('si', 'event_data')
+    a.db(0xAD)                   # lodsw
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    a.mov_mem8_imm('track_id', 0)
+    a.db(0xC3)                   # ret
+
+    a.label('music_switch_fusion')
+    a.call('all_notes_off_res')
+    a.db(0x0E, 0x1F)
+    a.mov_r16_label('si', 'event_data_fusion')
+    a.db(0xAD)
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    a.mov_mem8_imm('track_id', 1)
+    a.db(0xC3)
+
+    # Path at DS:DX contains "FIGHT.EXE" (case as on disk)? CF=1 if yes
+    a.label('path_has_fight_exe')
+    a.cld()
+    a.push('bx')
+    a.mov_rr16('si', 'dx')
+    a.mov_r16_imm('bx', 200)
+    a.label('ph_loop')
+    a.db(0x85, 0xDB)            # test bx, bx
+    a.jl('ph_fail')
+    a.dec16('bx')
+    a.db(0x80, 0x3C, 0x00)      # cmp byte [si], 0
+    a.je('ph_fail')
+    a.push('si')
+    a.push('bx')
+    a.db(0x0E, 0x07)            # push cs; pop es
+    a.mov_r16_label('di', 'str_fight_exe')
+    a.mov_r16_imm('cx', 9)
+    a.db(0xF3, 0xA6)            # repe cmpsb  (DS:SI vs ES:DI)
+    a.pop('bx')
+    a.pop('si')
+    a.je('ph_ok')
+    a.push('si')
+    a.push('bx')
+    a.db(0x0E, 0x07)            # push cs; pop es
+    a.mov_r16_label('di', 'str_fight_lower')
+    a.mov_r16_imm('cx', 9)
+    a.db(0xF3, 0xA6)            # try "fight.exe"
+    a.pop('bx')
+    a.pop('si')
+    a.je('ph_ok')
+    a.inc16('si')
+    a.jmp('ph_loop')
+    a.label('ph_ok')
+    a.pop('bx')
+    a.db(0xF9)                   # stc
+    a.db(0xC3)
+    a.label('ph_fail')
+    a.pop('bx')
+    a.db(0xF8)                   # clc
+    a.db(0xC3)
+
+    a.label('dos_isr')
+    a.db(0xFB)                   # STI
+    a.db(0x80, 0xFC, 0x4B)      # cmp ah, 4Bh
+    a.je('dos_exec_check')
+    a.db(0x80, 0xFC, 0x4D)      # cmp ah, 4Dh
+    a.je('dos_wait_check')
+    a.label('dos_chain')
+    a.db(0x2E, 0xFF, 0x2E)      # jmp far [CS:old_21_off]
+    a._fixup('abs16', 'old_21_off'); a._word(0)
+
+    a.label('dos_exec_check')
+    a.cmp_al_imm(0)
+    a.jne('dos_chain')
+    a.push('ax');  a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
+    a.push('di');  a.push('bp')
+    a.db(0x06)                   # push es
+    a.call('path_has_fight_exe')
+    a.jc('dos_exec_fight')
+    a.db(0x07)                   # pop es
+    a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
+    a.pop('cx');  a.pop('bx');  a.pop('ax')
+    a.jmp('dos_chain')
+    a.label('dos_exec_fight')
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)            # push cs; pop ds
+    a.call('music_switch_fusion')
+    a.mov_mem8_imm('in_fight', 1)
+    a.db(0x1F)                   # pop ds
+    a.db(0x07)                   # pop es
+    a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
+    a.pop('cx');  a.pop('bx');  a.pop('ax')
+    a.jmp('dos_chain')
+
+    a.label('dos_wait_check')
+    a.db(0x80, 0x3E); a._fixup('abs16', 'in_fight'); a._word(0)
+    a.db(0x00)
+    a.je('dos_chain')
+    a.push('ax');  a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
+    a.push('di');  a.push('bp')
+    a.db(0x06)                   # push es
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)
+    a.call('music_switch_main')
+    a.mov_mem8_imm('in_fight', 0)
+    a.db(0x1F)                   # pop ds
+    a.db(0x07)                   # pop es
+    a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
+    a.pop('cx');  a.pop('bx');  a.pop('ax')
+    a.jmp('dos_chain')
+
+    a.label('str_fight_exe')
+    a.db(b'FIGHT.EXE')
+    a.label('str_fight_lower')
+    a.db(b'fight.exe')
+
     # -- Cooked MIDI event data (resident) --
     a.label('event_data')
-    a.db(cooked_midi)
+    a.db(cooked_main)
+    a.label('event_data_fusion')
+    a.db(cooked_fusion)
     a.label('end_resident')
 
     # =================================================================
@@ -1020,6 +1171,15 @@ def build_mods_com(cooked_midi):
     a.mov_r16_label('dx', 'isr')
     a.int21()
 
+    # Hook INT 21h (FIGHT.EXE → FUSION; AH=4Dh → MAIN)
+    a.mov_r16_imm('ax', 0x3521)
+    a.int21()
+    a.db(0x89, 0x1E); a._fixup('abs16', 'old_21_off'); a._word(0)
+    a.db(0x8C, 0x06); a._fixup('abs16', 'old_21_seg'); a._word(0)
+    a.mov_r16_imm('ax', 0x2521)
+    a.mov_r16_label('dx', 'dos_isr')
+    a.int21()
+
     # Reprogram PIT if game_speed != 1.0
     a.mov_ax_mem('pit_divisor_val')
     a.db(0x85, 0xC0)            # test ax, ax
@@ -1531,23 +1691,36 @@ def patch_play_com():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    silent = struct.pack('<HBH', 1, 0, 0xFFFF)
+
     midi_path = os.path.join(GAME_DIR, "SYS", "MAIN.mid")
+    fusion_path = os.path.join(GAME_DIR, "SYS", "FUSION.mid")
+
     if os.path.exists(midi_path):
-        print("Parsing MIDI...")
+        print("Parsing MAIN.mid...")
         events, div = parse_midi(midi_path)
         midi_count = sum(1 for _, k, _ in events if k == 'M')
         tempo_count = sum(1 for _, k, _ in events if k == 'T')
         print(f"  {midi_count} MIDI events, {tempo_count} tempo changes, division={div}")
-
-        print(f"Cooking events (target rate: {COOK_HZ:.1f} Hz)...")
-        cooked = cook_events(events, div, target_hz=COOK_HZ)
-        print(f"  Cooked data: {len(cooked)} bytes")
+        print(f"Cooking MAIN (target rate: {COOK_HZ:.1f} Hz)...")
+        cooked_main = cook_events(events, div, target_hz=COOK_HZ)
+        print(f"  Cooked MAIN: {len(cooked_main)} bytes")
     else:
         print("  SYS/MAIN.mid not found — BGM will be silent")
-        cooked = struct.pack('<HBH', 1, 0, 0xFFFF)
+        cooked_main = silent
+
+    if os.path.exists(fusion_path):
+        print("Parsing FUSION.mid...")
+        fev, fdiv = parse_midi(fusion_path)
+        print(f"Cooking FUSION (target rate: {COOK_HZ:.1f} Hz)...")
+        cooked_fusion = cook_events(fev, fdiv, target_hz=COOK_HZ)
+        print(f"  Cooked FUSION: {len(cooked_fusion)} bytes")
+    else:
+        print("  SYS/FUSION.mid not found — fight music falls back to MAIN")
+        cooked_fusion = cooked_main
 
     print("Building MODS.COM...")
-    mods_bin = build_mods_com(cooked)
+    mods_bin = build_mods_com(cooked_main, cooked_fusion)
     if len(mods_bin) > 65280:
         print(f"  ERROR: MODS.COM too large ({len(mods_bin)} bytes, limit ~65280)")
         sys.exit(1)

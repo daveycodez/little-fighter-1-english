@@ -346,86 +346,79 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.dw(0xB601)              # tag before isr — slave finds BIOS vector via INT 35h + layout
 
     # -- Resident ISR: INT 08h handler --
-    # PIT at game_speed×4 Hz with bgm (perfect 4:1 at default 18.2 Hz)
-    # jitter).  Each tick processes exactly one cooked MIDI tick.  A chain
-    # prescaler throttles BIOS tick-counter updates to game_speed rate.
+    # Optimized: fast path (non-chain, wait_ctr>0) only pushes AX + DS.
+    # Full register save deferred to MIDI processing / BIOS chain paths.
     a.label('isr')
-    a.push('ax');  a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
+    a.push('ax')
     a.db(0x1E)                   # push ds
-    a.db(0x06)                   # push es
     a.db(0x0E, 0x1F)            # push cs; pop ds
 
-    # ---- Chain prescaler: game tick rate control ----
-    # chain_acc += chain_step; fire when >= chain_thresh (COOK_HZ * 10)
+    # ---- Chain prescaler ----
     a.mov_ax_mem('chain_acc')
     a.db(0x03, 0x06); a._fixup('abs16', 'chain_step'); a._word(0)  # ADD AX, [chain_step]
     a.db(0x3B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)  # CMP AX, [chain_thresh]
     a.jb('isr_no_chain')
 
-    a.db(0x2B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)  # SUB AX, [chain_thresh]
+    # ---- Chain tick: call BIOS, F11 check, then fall through to MIDI ----
+    a.db(0x2B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)
     a.mov_mem_ax('chain_acc')
-    # Chain to original INT 08h (BIOS tick counter + EOI)
-    a.db(0x9C)                   # pushf (simulate INT frame)
+    a.db(0x9C)                   # pushf
     a.db(0xFF, 0x1E)             # call far [old_08_off]
     a._fixup('abs16', 'old_08_off'); a._word(0)
-    # (No CLI here — keeps IF whatever BIOS left; narrower IRQ-off window vs stutter A/B test.)
 
-    # ---- F11: mute/unmute BGM (bgm=1 only; chain ticks only) ----
+    # F11: mute/unmute (chain ticks only)
     a.db(0xE4, 0x60)            # in al, 0x60
-    a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)  # cmp al, [prev_scan]
-    a.je('isr_midi')             # same scan code — skip
-    a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)        # mov [prev_scan], al
-    a.cmp_al_imm(0x57)          # F11 make code?
+    a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)
+    a.je('isr_midi')
+    a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)
+    a.cmp_al_imm(0x57)
     a.jne('isr_midi')
-    # Toggle muted; if newly muted, All Notes Off (CC#123 on all channels)
-    a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)  # XOR byte [muted], 1
+    a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)
     a.db(0x01)
-    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)
     a.db(0x00)
-    a.je('isr_midi')            # unmuted — no anoff
-    a.push('bx');  a.push('cx')
+    a.je('isr_midi')
+    a.push('bx');  a.push('cx');  a.push('dx')
     a.mov_r16_imm('cx', 16)
     a.xor_r8('bl')
     a.label('isr_mute_anoff')
     a.mov_r8_imm('al', 0xB0)
-    a.db(0x08, 0xD8)            # or al, bl
+    a.db(0x08, 0xD8)
     a.mov_r16_imm('dx', 0x0330)
-    a.db(0xEE)                   # out dx, al
+    a.db(0xEE)
     a.mov_r8_imm('al', 0x7B)
-    a.db(0xEE)                   # All Notes Off
+    a.db(0xEE)
     a.xor_r8('al')
-    a.db(0xEE)                   # value 0
-    a.db(0xFE, 0xC3)            # inc bl
+    a.db(0xEE)
+    a.db(0xFE, 0xC3)
     a.loop('isr_mute_anoff')
-    a.pop('cx');  a.pop('bx')
+    a.pop('dx');  a.pop('cx');  a.pop('bx')
     a.jmp('isr_midi')
 
+    # ---- Non-chain: EOI + fast MIDI check ----
     a.label('isr_no_chain')
     a.mov_mem_ax('chain_acc')
-    # No chain — send EOI ourselves
     a.mov_r8_imm('al', 0x20)
-    a.db(0xE6, 0x20)            # out 0x20, al
+    a.db(0xE6, 0x20)            # out 0x20, al  (EOI)
 
-    # ---- Process MIDI ----
     a.label('isr_midi')
-
-    # ---- Skip MIDI when muted ----
-    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
+    # Quick bail: muted?
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)
     a.db(0x00)
-    a.je('isr_not_muted')
-    a.jmp_near('isr_done')
-    a.label('isr_not_muted')
+    a.jne('isr_fast_done')
+    # Quick bail: DEC wait_ctr; if still >0, we're done
+    a.db(0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)
+    a.jnz('isr_fast_done')
 
-    # ---- MIDI tick (stream_seg selects data source) ----
+    # ---- wait_ctr hit 0: full MIDI processing (push remaining regs) ----
+    a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
+    a.db(0x06)                   # push es
     a.mov_ax_mem('stream_seg')
-    a.db(0x0B, 0xC0)            # OR AX, AX
-    a.je('isr_done')
+    a.db(0x0B, 0xC0)
+    a.je('isr_midi_done')
     a.cld()
-    a.db(0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)   # DEC word [wait_ctr]
-    a.jnz('isr_done')
-
-    a.db(0x8E, 0xC0)            # MOV ES, AX  (= stream_seg)
-    a.db(0x8B, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)   # MOV SI, [data_ptr]
+    a.db(0x8E, 0xC0)            # MOV ES, AX
+    a.db(0x8B, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
 
     a.label('isr_frame')
     a.db(0x26); a.lodsb()       # ES: LODSB — count byte
@@ -444,15 +437,17 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.cmp_ax_imm(0xFFFF)
     a.je('isr_loop')
     a.db(0x85, 0xC0)            # test ax, ax
-    a.je('isr_frame')            # wait=0 → next frame immediately
+    a.je('isr_frame')
 
     a.mov_mem_ax('wait_ctr')
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
 
-    a.label('isr_done')
+    a.label('isr_midi_done')
     a.db(0x07)                   # pop es
+    a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('bx')
+    a.label('isr_fast_done')
     a.db(0x1F)                   # pop ds
-    a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('bx');  a.pop('ax')
+    a.pop('ax')
     a.db(0xCF)                   # iret
 
     # -- Loop: all notes off, rewind to start of active stream --
@@ -461,30 +456,30 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.xor_r8('bl')
     a.label('isr_anoff')
     a.mov_r8_imm('al', 0xB0)
-    a.db(0x08, 0xD8)            # or al, bl
+    a.db(0x08, 0xD8)
     a.mov_r16_imm('dx', 0x0330)
     a.db(0xEE)
     a.mov_r8_imm('al', 0x7B)
     a.db(0xEE)
     a.xor_r8('al')
     a.db(0xEE)
-    a.db(0xFE, 0xC3)            # inc bl
+    a.db(0xFE, 0xC3)
     a.loop('isr_anoff')
 
     a.db(0x8C, 0xC8)            # MOV AX, CS
-    a.db(0x3B, 0x06); a._fixup('abs16', 'stream_seg'); a._word(0)  # CMP AX, [stream_seg]
+    a.db(0x3B, 0x06); a._fixup('abs16', 'stream_seg'); a._word(0)
     a.jne('isr_loop_ext')
     a.mov_r16_label('si', 'event_data')
     a.jmp('isr_loop_read')
     a.label('isr_loop_ext')
-    a.xor_r16('si')             # external: offset 0
+    a.xor_r16('si')
     a.label('isr_loop_read')
-    a.db(0x26, 0xAD)            # ES: LODSW — first wait of new loop (ES still set)
-    a.db(0x85, 0xC0)            # test ax, ax
+    a.db(0x26, 0xAD)            # ES: LODSW — first wait of new loop
+    a.db(0x85, 0xC0)
     a.je('isr_frame')
     a.mov_mem_ax('wait_ctr')
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
-    a.jmp('isr_done')
+    a.jmp('isr_midi_done')
 
     # -- INT 21h: FIGHT → pick fight BGM slot; AH=4Dh → MAIN + rewind --
     a.label('all_notes_off_res')

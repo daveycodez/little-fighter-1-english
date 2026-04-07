@@ -368,7 +368,7 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0x9C)                   # pushf (simulate INT frame)
     a.db(0xFF, 0x1E)             # call far [old_08_off]
     a._fixup('abs16', 'old_08_off'); a._word(0)
-    a.db(0xFA)                   # cli — BIOS may STI; block nested IRQ0 during MIDI
+    # (No CLI here — keeps IF whatever BIOS left; narrower IRQ-off window vs stutter A/B test.)
 
     # ---- F11: mute/unmute BGM (bgm=1 only; chain ticks only) ----
     a.db(0xE4, 0x60)            # in al, 0x60
@@ -1987,7 +1987,6 @@ def build_music_slave_com(cooked_track, mods_isr_to_old08):
     a.db(0x9C)
     a.db(0xFF, 0x1E)
     a._fixup('abs16', 'old_08_off'); a._word(0)
-    a.db(0xFA)                   # cli — same as MODS isr (no nested IRQ0 during MIDI)
 
     a.db(0xE4, 0x60)
     a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)

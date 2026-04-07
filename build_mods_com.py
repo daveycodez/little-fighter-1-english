@@ -1061,6 +1061,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.call('search')
     a.mov_mem_al('flag_no_mp_hit')
 
+    a.mov_r16_label('si', 'str_bal_julian')
+    a.call('search')
+    a.mov_mem_al('flag_bal_julian')
+
     # -- game_speed: parse decimal Hz value from mods.cfg --
     # Format: game_speed=XX.X (PIT Hz / FPS). 18.2=normal; with bgm, match COOK_HZ/N in build.
     # Parsed as value×10 (one decimal place), stored in value_x10_var.
@@ -1504,6 +1508,15 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
         a.mov_r8_imm('bl', 4)
         a.call('apply_patch')
 
+    # balanced_julian: NOP Julian's passive HP regen (INC [BX+3416h] at 0x15282)
+    a.mov_al_mem('flag_bal_julian')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x5282)
+    a.mov_r16_label('si', 'nops')
+    a.mov_r16_label('di', 'inc_hp_orig')
+    a.mov_r8_imm('bl', 4)
+    a.call('apply_patch')
+
     # Close FIGHT.EXE
     a.mov_bx_mem('cur_handle')
     a.mov_r8_imm('ah', 0x3E)
@@ -1713,6 +1726,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('str_cheap_supers');a.db("cheap_supers=1\x00")
     a.label('str_easy_supers');a.db("easy_supers=1\x00")
     a.label('str_no_mp_hit');a.db("no_mp_on_hit=1\x00")
+    a.label('str_bal_julian');a.db("balanced_julian=1\x00")
     a.label('str_bgm');      a.db("bgm=1\x00")
     a.label('str_game_speed'); a.db("game_speed=\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
@@ -1742,6 +1756,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('flag_cheap_supers'); a.db(0)
     a.label('flag_easy_supers'); a.db(0)
     a.label('flag_no_mp_hit'); a.db(0)
+    a.label('flag_bal_julian'); a.db(0)
     a.label('flag_bgm');     a.db(0)
     a.label('rate_value');   a.dw(0x012C)
     a.label('cur_handle');   a.dw(0)
@@ -1756,6 +1771,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('cheap_cost_off_di');a.db(0x50, 0x8B, 0xC7, 0xBA, 0x34, 0x00, 0xF7, 0xEA, 0x8B, 0xD8, 0x58)
     a.label('add_mp7_orig');     a.db(0x83, 0x87, 0x20, 0x34, 0x07)
     a.label('add_mp_ax_orig');   a.db(0x01, 0x87, 0x20, 0x34)
+    a.label('inc_hp_orig');      a.db(0xFF, 0x87, 0x16, 0x34)
     a.label('sub_mp_12');       a.db(0x83, 0xAF, 0x20, 0x34, 0x0C)
 
     a.label('fast_mp_on');     a.db(0x8B, 0xC6, 0xB2, 0x34, 0xF7, 0xEA, 0x8B, 0xD8, 0x83, 0x87, 0x20, 0x34, 0x02)

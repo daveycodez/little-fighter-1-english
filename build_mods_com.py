@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_HZ = 1193182.0 / 65536.0  # ~18.2065 Hz (default DOS timer rate)
-COOK_HZ = 72.8                 # cook MIDI at 72.8 Hz (N=4 × 18.2 → perfect 4:1)
+COOK_HZ = 54.6                 # cook MIDI at 54.6 Hz (N=3 × 18.2 → perfect 3:1)
 
 
 # ---------------------------------------------------------------------------
@@ -332,7 +332,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('wait_ctr');     a.dw(1)
     a.label('chain_acc');    a.dw(0)
     a.label('chain_step');   a.dw(182)
-    a.label('chain_thresh'); a.dw(728)
+    a.label('chain_thresh'); a.dw(546)
     a.label('muted');        a.db(0)
     a.label('stream_seg');   a.dw(0)   # segment of active stream data (CS for MAIN)
     a.label('fight_seg');    a.dw(0)   # allocated segment for the loaded fight stream
@@ -1141,12 +1141,12 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_mem_ax('chain_step')
 
     # PIT fixed at 72.8 Hz (= 18.2 × 4) for MIDI timing.
-    # chain_thresh = 728 (72.8 × 10). Perfect 4:1 at game_speed=18.2.
-    a.mov_r16_imm('ax', 728)
+    # chain_thresh = 546 (54.6 × 10). Perfect 3:1 at game_speed=18.2.
+    a.mov_r16_imm('ax', 546)
     a.mov_mem_ax('chain_thresh')
 
-    # PIT divisor = 16390 (1193182 / 72.8)
-    a.mov_r16_imm('ax', 16390)
+    # PIT divisor = 21853 (1193182 / 54.6)
+    a.mov_r16_imm('ax', 21853)
     a.mov_mem_ax('pit_divisor_val')
 
     a.label('gs_bgm_done')
@@ -2071,8 +2071,15 @@ if __name__ == "__main__":
         midi_count = sum(1 for _, k, _ in events if k == 'M')
         tempo_count = sum(1 for _, k, _ in events if k == 'T')
         print(f"  {midi_count} MIDI events, {tempo_count} tempo changes, division={div}")
-        print(f"Cooking MAIN (target rate: {COOK_HZ:.1f} Hz)...")
-        cooked_main = cook_events(events, div, target_hz=COOK_HZ)
+        # Boost MAIN volume to match fight tracks (CC7 79→100 on ch0 and ch9)
+        boosted = []
+        for t, k, d in events:
+            if k == 'M' and (d[0] & 0xF0) == 0xB0 and d[1] == 7:
+                boosted.append((t, k, bytes([d[0], d[1], min(d[2] + 21, 127)])))
+            else:
+                boosted.append((t, k, d))
+        print(f"Cooking MAIN (target rate: {COOK_HZ:.1f} Hz, volume boosted)...")
+        cooked_main = cook_events(boosted, div, target_hz=COOK_HZ)
         print(f"  Cooked MAIN: {len(cooked_main)} bytes")
     else:
         print("  SYS/MAIN.mid not found — BGM will be silent")

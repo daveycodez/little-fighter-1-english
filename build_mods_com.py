@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """
-Build script: generates MODS.COM (DOS patcher + optional BGM/game-speed TSR)
-and patches PLAY.COM.
+Build script: generates MODS.COM (MAIN + embedded FUSION + router), SYS/TRANSFORM.COM
+(satellite TSR for contest only — COM size limit), optional SYS/FIGHTBGM.COM, and patches PLAY.COM.
 
-When bgm=1 in mods.cfg, MODS.COM installs a TSR that plays baked-in MIDI
-data through MPU-401 UART mode.  PIT rate matches the build (game_speed×N
+When bgm=1 in mods.cfg, MODS.COM installs a TSR that plays baked-in MAIN
+MIDI through MPU-401 UART mode.  PIT rate matches the build (game_speed×N
 Hz for jitter-free music); a chain prescaler in the ISR throttles BIOS
 tick updates to the configured game_speed.  F11 toggles mute/unmute
-(All Notes Off on mute).  INT 21h hook: EXEC of FUSION track when
-FIGHT.EXE runs; return to MAIN after WAIT (AH=4Dh).  When bgm=0, PIT is
-reprogrammed directly to game_speed with no TSR.
+(All Notes Off on mute).  MODS also copies the BIOS INT 08 vector to
+IVT[0x68] as a fallback; satellites primarily read old_08_* from the prior
+INT 08 handler (tagged 0xB601/0xB602) because int 68h is not safe to rely on
+(CONTEST and other code may repurpose it).  INT 21h hook:
+EXEC of FIGHT switches the same INT 08 stream to embedded FUSION (no second
+TSR per fight — avoids repeat FIGHTBGM.COM resident copies crashing load).
+CONTEST still runs TRANSFORM.COM / SYS\\TRANSFORM.COM.  After
+WAIT (AH=4Dh) from the same PSP that EXEC'd FIGHT/CONTEST restores MAIN and
+INT 08 (FIGHT may call WAIT internally — those must not restore).  When
+bgm=0, PIT is reprogrammed directly to game_speed with no TSR.
 
 Developer tool only — end users never run this.
 """
@@ -138,6 +145,7 @@ class Asm16:
     def _jcc8(self, op, l):    self._emit(op); self._fixup('rel8', l); self._emit(0)
     def jc(self, l):           self._jcc8(0x72, l)
     def jb(self, l):           self._jcc8(0x72, l)
+    def jnc(self, l):          self._jcc8(0x73, l)
     def je(self, l):           self._jcc8(0x74, l)
     def jne(self, l):          self._jcc8(0x75, l)
     def jnz(self, l):          self._jcc8(0x75, l)
@@ -329,11 +337,14 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.label('chain_step');   a.dw(182)
     a.label('chain_thresh'); a.dw(728)
     a.label('muted');        a.db(0)
+    a.label('suspend_main'); a.db(0)   # 1 while satellite loads — stop MAIN stream / MPU fights
+    a.label('bgm_track');     a.db(0)   # 0 = MAIN stream, 1 = FUSION (isr_loop rewind target)
     a.label('prev_scan');    a.db(0)
-    a.label('track_id');     a.db(0)   # 0=MAIN, 1=FUSION (FIGHT)
-    a.label('in_fight');     a.db(0)   # 1 after EXEC FIGHT.EXE until AH=4Dh
+    a.label('wait_restore_psp'); a.dw(0)  # parent PSP: restore music only on WAIT when AH=62h matches
+    a.label('exec_psp_snapshot'); a.dw(0)  # PSP read before nested EXEC (avoid AH=62 after child load)
     a.label('old_21_off');   a.dw(0)
     a.label('old_21_seg');   a.dw(0)
+    a.dw(0xB601)              # tag before isr — slave finds BIOS vector via INT 35h + layout
 
     # -- Resident ISR: INT 08h handler --
     # PIT at game_speed×4 Hz with bgm (perfect 4:1 at default 18.2 Hz)
@@ -357,6 +368,7 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0x9C)                   # pushf (simulate INT frame)
     a.db(0xFF, 0x1E)             # call far [old_08_off]
     a._fixup('abs16', 'old_08_off'); a._word(0)
+    a.db(0xFA)                   # cli — BIOS may STI; block nested IRQ0 during MIDI
 
     # ---- F11: mute/unmute BGM (bgm=1 only; chain ticks only) ----
     a.db(0xE4, 0x60)            # in al, 0x60
@@ -399,6 +411,10 @@ def build_mods_com(cooked_main, cooked_fusion):
 
     # ---- Skip MIDI when muted ----
     a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP byte [muted], 0
+    a.db(0x00)
+    a.jne('isr_done')
+    # ---- Skip MAIN stream while FIGHTBGM/TRANSFORM is taking over INT 08 / MPU ----
+    a.db(0x80, 0x3E); a._fixup('abs16', 'suspend_main'); a._word(0)
     a.db(0x00)
     a.jne('isr_done')
     a.cld()
@@ -450,7 +466,7 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0xFE, 0xC3)            # inc bl
     a.loop('isr_anoff')
 
-    a.db(0x80, 0x3E); a._fixup('abs16', 'track_id'); a._word(0)  # CMP byte [track_id], 0
+    a.db(0x80, 0x3E); a._fixup('abs16', 'bgm_track'); a._word(0)  # CMP byte [bgm_track], 0
     a.db(0x00)
     a.je('isr_rewind_main')
     a.mov_r16_label('si', 'event_data_fusion')
@@ -465,7 +481,7 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
     a.jmp('isr_done')
 
-    # -- INT 21h: FIGHT.EXE → FUSION; AH=4Dh after exec → MAIN --
+    # -- INT 21h: FIGHT → in-process FUSION; CONTEST → TRANSFORM.COM; AH=4Dh → MAIN + restore INT 08 --
     a.label('all_notes_off_res')
     a.push('bx');  a.push('cx')
     a.mov_r16_imm('cx', 16)
@@ -484,6 +500,20 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.pop('cx');  a.pop('bx')
     a.ret()
 
+    # Re-hook INT 08 to MODS isr (satellite COM replaced it during fight/contest)
+    a.label('restore_int08_is_mods')
+    a.push('ax')
+    a.push('dx')
+    a.db(0x1E)                   # push ds
+    a.mov_r16_imm('ax', 0x2508)
+    a.db(0x0E, 0x1F)            # push cs; pop ds
+    a.mov_r16_label('dx', 'isr')
+    a.int21()
+    a.db(0x1F)                   # pop ds
+    a.pop('dx')
+    a.pop('ax')
+    a.ret()
+
     a.label('music_switch_main')
     a.call('all_notes_off_res')
     a.db(0x0E, 0x1F)            # push cs; pop ds
@@ -491,18 +521,146 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0xAD)                   # lodsw
     a.mov_mem_ax('wait_ctr')
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
-    a.mov_mem8_imm('track_id', 0)
+    a.call('restore_int08_is_mods')
+    a.mov_mem8_imm('suspend_main', 0)
+    a.mov_mem8_imm('bgm_track', 0)
+    a.mov_mem16_imm('wait_restore_psp', 0)
     a.db(0xC3)                   # ret
 
+    # Switch to FUSION stream in-process (same INT 08 / MPU — no satellite TSR).
     a.label('music_switch_fusion')
     a.call('all_notes_off_res')
-    a.db(0x0E, 0x1F)
+    a.db(0x0E, 0x1F)            # push cs; pop ds
     a.mov_r16_label('si', 'event_data_fusion')
-    a.db(0xAD)
+    a.db(0xAD)                   # lodsw — first wait
     a.mov_mem_ax('wait_ctr')
     a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
-    a.mov_mem8_imm('track_id', 1)
-    a.db(0xC3)
+    a.mov_mem8_imm('bgm_track', 1)
+    a.db(0xC3)                   # ret
+
+    # Bare token at DS:SI is a path component? CF=1 if SI==DX or [SI-1] is \ or /
+    # (Avoids NOCONTESCONTEST matching inner "CONTEST". DX = pathname offset from EXEC.)
+    a.label('path_bare_token_ok')
+    a.push('ax')
+    a.push('bx')
+    a.db(0x39, 0xD6)            # CMP SI, DX
+    a.je('pbtk_yes')
+    a.mov_rr16('bx', 'si')
+    a.dec16('bx')
+    a.db(0x8A, 0x07)            # MOV AL, [BX]
+    a.cmp_al_imm(0x5C)          # '\'
+    a.je('pbtk_yes')
+    a.cmp_al_imm(ord('/'))
+    a.je('pbtk_yes')
+    a.cmp_al_imm(ord(':'))
+    a.je('pbtk_yes')
+    a.pop('bx')
+    a.pop('ax')
+    a.db(0xF8)
+    a.ret()
+    a.label('pbtk_yes')
+    a.pop('bx')
+    a.pop('ax')
+    a.db(0xF9)
+    a.ret()
+
+    # DS:SI -> possible start of filename: "FIGHT" + NUL or "fight" + NUL? CF=1 if yes
+    a.label('bare_fight_name_at_si')
+    a.push('bx')
+    a.mov_rr16('bx', 'si')
+    a.db(0x8A, 0x07)            # MOV AL, [BX]
+    a.cmp_al_imm(ord('F'))
+    a.je('bf_chk_i')
+    a.cmp_al_imm(ord('f'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x01)
+    a.cmp_al_imm(ord('i'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x02)
+    a.cmp_al_imm(ord('g'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x03)
+    a.cmp_al_imm(ord('h'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x04)
+    a.cmp_al_imm(ord('t'))
+    a.jne('bf_fail')
+    a.db(0x80, 0x7F, 0x05, 0x00)  # CMP byte [BX+5], 0
+    a.jne('bf_fail')
+    a.pop('bx')
+    a.db(0xF9)
+    a.ret()
+    a.label('bf_chk_i')
+    a.db(0x8A, 0x47, 0x01)
+    a.cmp_al_imm(ord('I'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x02)
+    a.cmp_al_imm(ord('G'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x03)
+    a.cmp_al_imm(ord('H'))
+    a.jne('bf_fail')
+    a.db(0x8A, 0x47, 0x04)
+    a.cmp_al_imm(ord('T'))
+    a.jne('bf_fail')
+    a.db(0x80, 0x7F, 0x05, 0x00)
+    a.jne('bf_fail')
+    a.pop('bx')
+    a.db(0xF9)
+    a.ret()
+    a.label('bf_fail')
+    a.pop('bx')
+    a.db(0xF8)
+    a.ret()
+
+    # DS:SI -> "CONTEST" + NUL / "contest" + NUL? CF=1 if yes
+    a.label('bare_contest_name_at_si')
+    a.push('bx')
+    a.mov_rr16('bx', 'si')
+    a.db(0x8A, 0x07)
+    a.cmp_al_imm(ord('C'))
+    a.je('bc_u')
+    a.cmp_al_imm(ord('c'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x01, ord('o'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x02, ord('n'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x03, ord('t'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x04, ord('e'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x05, ord('s'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x06, ord('t'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x07, 0x00)
+    a.jne('bc_fail')
+    a.pop('bx')
+    a.db(0xF9)
+    a.ret()
+    a.label('bc_u')
+    a.db(0x80, 0x7F, 0x01, ord('O'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x02, ord('N'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x03, ord('T'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x04, ord('E'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x05, ord('S'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x06, ord('T'))
+    a.jne('bc_fail')
+    a.db(0x80, 0x7F, 0x07, 0x00)
+    a.jne('bc_fail')
+    a.pop('bx')
+    a.db(0xF9)
+    a.ret()
+    a.label('bc_fail')
+    a.pop('bx')
+    a.db(0xF8)
+    a.ret()
 
     # Path at DS:DX contains "FIGHT.EXE" (case as on disk)? CF=1 if yes
     a.label('path_has_fight_exe')
@@ -534,6 +692,11 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.pop('bx')
     a.pop('si')
     a.je('ph_ok')
+    a.call('bare_fight_name_at_si')
+    a.jnc('ph_after_bare_fight')
+    a.call('path_bare_token_ok')
+    a.jc('ph_ok')               # PLAY.COM uses "FIGHT" + NUL (cwd SYS after CD)
+    a.label('ph_after_bare_fight')
     a.inc16('si')
     a.jmp('ph_loop')
     a.label('ph_ok')
@@ -545,62 +708,193 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0xF8)                   # clc
     a.db(0xC3)
 
+    # Path at DS:DX contains "CONTEST.EXE"? CF=1 if yes
+    a.label('path_has_contest_exe')
+    a.cld()
+    a.push('bx')
+    a.mov_rr16('si', 'dx')
+    a.mov_r16_imm('bx', 200)
+    a.label('phc_loop')
+    a.db(0x85, 0xDB)
+    a.jl('phc_fail')
+    a.dec16('bx')
+    a.db(0x80, 0x3C, 0x00)
+    a.je('phc_fail')
+    a.push('si')
+    a.push('bx')
+    a.db(0x0E, 0x07)
+    a.mov_r16_label('di', 'str_contest_exe')
+    a.mov_r16_imm('cx', 10)
+    a.db(0xF3, 0xA6)
+    a.pop('bx')
+    a.pop('si')
+    a.je('phc_ok')
+    a.push('si')
+    a.push('bx')
+    a.db(0x0E, 0x07)
+    a.mov_r16_label('di', 'str_contest_lower')
+    a.mov_r16_imm('cx', 10)
+    a.db(0xF3, 0xA6)
+    a.pop('bx')
+    a.pop('si')
+    a.je('phc_ok')
+    a.call('bare_contest_name_at_si')
+    a.jnc('phc_after_bare_contest')
+    a.call('path_bare_token_ok')
+    a.jc('phc_ok')              # "CONTEST" + NUL without .EXE (not NOCONTESCONTEST)
+    a.label('phc_after_bare_contest')
+    a.inc16('si')
+    a.jmp('phc_loop')
+    a.label('phc_ok')
+    a.pop('bx')
+    a.db(0xF9)
+    a.db(0xC3)
+    a.label('phc_fail')
+    a.pop('bx')
+    a.db(0xF8)
+    a.db(0xC3)
+
     a.label('dos_isr')
     a.db(0xFB)                   # STI
     a.db(0x80, 0xFC, 0x4B)      # cmp ah, 4Bh
     a.je('dos_exec_check')
     a.db(0x80, 0xFC, 0x4D)      # cmp ah, 4Dh
-    a.je('dos_wait_check')
+    a.jne('dos_not_wait')
+    a.jmp_near('dos_wait_check')
+    a.label('dos_not_wait')
     a.label('dos_chain')
     a.db(0x2E, 0xFF, 0x2E)      # jmp far [CS:old_21_off]
     a._fixup('abs16', 'old_21_off'); a._word(0)
 
     a.label('dos_exec_check')
     a.cmp_al_imm(0)
-    a.jne('dos_chain')
+    a.je('dos_exec_al0')
+    a.jmp_near('dos_chain')
+    a.label('dos_exec_al0')
     a.push('ax');  a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
     a.push('di');  a.push('bp')
     a.db(0x06)                   # push es
     a.call('path_has_fight_exe')
     a.jc('dos_exec_fight')
+    a.call('path_has_contest_exe')
+    a.jc('dos_exec_contest')
     a.db(0x07)                   # pop es
     a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
     a.pop('cx');  a.pop('bx');  a.pop('ax')
-    a.jmp('dos_chain')
+    a.jmp_near('dos_chain')
     a.label('dos_exec_fight')
     a.db(0x1E)                   # push ds
     a.db(0x0E, 0x1F)            # push cs; pop ds
+    a.mov_mem16_imm('wait_restore_psp', 0)
+    a.push('ax')
+    a.push('bx')
+    a.mov_r8_imm('ah', 0x62)
+    a.int21()
+    a.mov_rr16('ax', 'bx')
+    a.mov_mem_ax('exec_psp_snapshot')
+    a.pop('bx')
+    a.pop('ax')
     a.call('music_switch_fusion')
-    a.mov_mem8_imm('in_fight', 1)
+    a.mov_ax_mem('exec_psp_snapshot')
+    a.mov_mem_ax('wait_restore_psp')
+    a.label('dos_spawn_fight_join')
     a.db(0x1F)                   # pop ds
     a.db(0x07)                   # pop es
     a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
     a.pop('cx');  a.pop('bx');  a.pop('ax')
-    a.jmp('dos_chain')
+    a.jmp_near('dos_chain')
+    a.label('dos_exec_contest')
+    a.db(0x1E)
+    a.db(0x0E, 0x1F)
+    a.mov_mem16_imm('wait_restore_psp', 0)
+    a.push('ax')
+    a.push('bx')
+    a.mov_r8_imm('ah', 0x62)
+    a.int21()
+    a.mov_rr16('ax', 'bx')
+    a.mov_mem_ax('exec_psp_snapshot')
+    a.pop('bx')
+    a.pop('ax')
+    a.call('all_notes_off_res')
+    a.mov_mem8_imm('suspend_main', 1)
+    a.mov_r8_imm('ah', 0x4B)
+    a.mov_r8_imm('al', 0x00)
+    a.mov_r16_label('dx', 'fn_transform_cwd')
+    a.int21()
+    a.jnc('dos_contest_spawned')
+    a.mov_r16_label('dx', 'fn_transform_sys')
+    a.int21()
+    a.label('dos_contest_spawned')
+    a.jc('dos_spawn_contest_undo')
+    a.mov_ax_mem('exec_psp_snapshot')
+    a.mov_mem_ax('wait_restore_psp')
+    a.jmp('dos_spawn_contest_join')
+    a.label('dos_spawn_contest_undo')
+    a.mov_mem8_imm('suspend_main', 0)
+    a.mov_mem16_imm('wait_restore_psp', 0)
+    a.label('dos_spawn_contest_join')
+    a.db(0x1F)
+    a.db(0x07)
+    a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
+    a.pop('cx');  a.pop('bx');  a.pop('ax')
+    a.jmp_near('dos_chain')
 
     a.label('dos_wait_check')
-    a.db(0x80, 0x3E); a._fixup('abs16', 'in_fight'); a._word(0)
-    a.db(0x00)
-    a.je('dos_chain')
+    a.push('ax')                 # preserve AH=4Dh (etc.) for real WAIT after chain
+    a.push('bx')
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)            # push cs; pop ds
+    a.mov_bx_mem('wait_restore_psp')
+    a.db(0x85, 0xDB)            # test bx, bx
+    a.db(0x1F)                   # pop ds
+    a.pop('bx')
+    a.jnz('dos_wait_psp_cmp')
+    a.pop('ax')
+    a.jmp_near('dos_chain')
+    a.label('dos_wait_psp_cmp')
+    a.push('bx')
+    a.push('cx')
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)
+    a.db(0x8B, 0x0E); a._fixup('abs16', 'wait_restore_psp'); a._word(0)  # MOV CX,[wait_restore_psp]
+    a.mov_r8_imm('ah', 0x62)
+    a.int21()
+    a.db(0x3B, 0xD9)            # CMP BX, CX  (current PSP vs parent that EXEC'd FIGHT)
+    a.db(0x1F)                   # pop ds
+    a.pop('cx')
+    a.pop('bx')
+    a.je('dos_wait_restore_pop_ax')
+    a.pop('ax')
+    a.jmp_near('dos_chain')
+    a.label('dos_wait_restore_pop_ax')
+    a.pop('ax')
+    a.label('dos_wait_restore_main')
     a.push('ax');  a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
     a.push('di');  a.push('bp')
     a.db(0x06)                   # push es
     a.db(0x1E)                   # push ds
     a.db(0x0E, 0x1F)
     a.call('music_switch_main')
-    a.mov_mem8_imm('in_fight', 0)
     a.db(0x1F)                   # pop ds
     a.db(0x07)                   # pop es
     a.pop('bp');  a.pop('di');  a.pop('si');  a.pop('dx')
     a.pop('cx');  a.pop('bx');  a.pop('ax')
-    a.jmp('dos_chain')
+    a.jmp_near('dos_chain')
 
     a.label('str_fight_exe')
     a.db(b'FIGHT.EXE')
     a.label('str_fight_lower')
     a.db(b'fight.exe')
+    a.label('str_contest_exe')
+    a.db(b'CONTEST.EXE')
+    a.label('str_contest_lower')
+    a.db(b'contest.exe')
+    a.label('fn_transform_cwd')
+    a.db(b'TRANSFORM.COM\x00')
+    a.label('fn_transform_sys')
+    a.db(b'SYS\\TRANSFORM.COM\x00')
 
-    # -- Cooked MIDI event data (resident) --
+    # -- Cooked MIDI (resident): MAIN + FUSION (contest stays in TRANSFORM.COM — size limit)
     a.label('event_data')
     a.db(cooked_main)
     a.label('event_data_fusion')
@@ -1126,7 +1420,9 @@ def build_mods_com(cooked_main, cooked_fusion):
     # -- No TSR needed; reprogram PIT for game_speed if != 1.0 --
     a.mov_ax_mem('pit_divisor_val')
     a.db(0x85, 0xC0)            # test ax, ax
-    a.je('exit')                 # divisor=0 → speed 1.0, nothing to do
+    a.jnz('pit_do_reprog')      # divisor≠0 → reprogram PIT
+    a.jmp_near('exit')          # divisor=0 → speed 1.0, nothing to do
+    a.label('pit_do_reprog')
 
     # Reprogram PIT channel 0
     a.push('ax')
@@ -1136,7 +1432,7 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.db(0xE6, 0x40)            # out 0x40, al  (lo byte of divisor)
     a.mov_rr8('al', 'ah')
     a.db(0xE6, 0x40)            # out 0x40, al  (hi byte of divisor)
-    a.jmp('exit')
+    a.jmp_near('exit')
 
     # -- TSR path: install music ISR --
     a.label('tsr_init')
@@ -1171,7 +1467,15 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.mov_r16_label('dx', 'isr')
     a.int21()
 
-    # Hook INT 21h (FIGHT.EXE → FUSION; AH=4Dh → MAIN)
+    # Publish real BIOS INT 08 at IVT[0x68] (linear 01A0h) for satellite COM chain
+    a.xor_r16('ax')
+    a.db(0x8E, 0xC0)            # MOV ES, AX
+    a.mov_ax_mem('old_08_off')
+    a.db(0x26, 0xA3, 0xA0, 0x01)  # MOV ES:[01A0h], AX
+    a.mov_ax_mem('old_08_seg')
+    a.db(0x26, 0xA3, 0xA2, 0x01)  # MOV ES:[01A2h], AX
+
+    # Hook INT 21h (FIGHT/CONTEST → satellite .COM; AH=4Dh → MAIN)
     a.mov_r16_imm('ax', 0x3521)
     a.int21()
     a.db(0x89, 0x1E); a._fixup('abs16', 'old_21_off'); a._word(0)
@@ -1646,6 +1950,218 @@ def build_mods_com(cooked_main, cooked_fusion):
     a.label('read_buffer')
 
     a.resolve()
+    isr_to_old08 = a.labels['isr'] - a.labels['old_08_off']
+    return bytes(a.buf), isr_to_old08
+
+
+def build_music_slave_com(cooked_track, mods_isr_to_old08):
+    """Single-track BGM TSR. Chains timer using BIOS vector from prior INT 08 handler image."""
+    a = Asm16()
+
+    a.mov_r16_label('bx', 'slave_init')
+    a.db(0xFF, 0xE3)
+
+    a.label('old_08_off');   a.dw(0)
+    a.label('old_08_seg');   a.dw(0)
+    a.label('data_ptr');     a.dw(0)
+    a.label('wait_ctr');     a.dw(1)
+    a.label('chain_acc');    a.dw(0)
+    a.label('chain_step');   a.dw(182)
+    a.label('chain_thresh'); a.dw(728)
+    a.label('muted');        a.db(0)
+    a.label('prev_scan');    a.db(0)
+    a.dw(0xB602)              # satellite tag (paired with MODS 0xB601 for chain discovery)
+
+    a.label('isr')
+    a.push('ax');  a.push('cx');  a.push('dx');  a.push('si')
+    a.db(0x1E)
+    a.db(0x0E, 0x1F)
+
+    a.mov_ax_mem('chain_acc')
+    a.db(0x03, 0x06); a._fixup('abs16', 'chain_step'); a._word(0)
+    a.db(0x3B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)
+    a.jb('sl_isr_no_chain')
+
+    a.db(0x2B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)
+    a.mov_mem_ax('chain_acc')
+    a.db(0x9C)
+    a.db(0xFF, 0x1E)
+    a._fixup('abs16', 'old_08_off'); a._word(0)
+    a.db(0xFA)                   # cli — same as MODS isr (no nested IRQ0 during MIDI)
+
+    a.db(0xE4, 0x60)
+    a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)
+    a.je('sl_isr_midi')
+    a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)
+    a.cmp_al_imm(0x57)
+    a.jne('sl_isr_midi')
+    a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)
+    a.db(0x01)
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)
+    a.db(0x00)
+    a.je('sl_isr_midi')
+    a.push('bx');  a.push('cx')
+    a.mov_r16_imm('cx', 16)
+    a.xor_r8('bl')
+    a.label('sl_isr_mute_anoff')
+    a.mov_r8_imm('al', 0xB0)
+    a.db(0x08, 0xD8)
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEE)
+    a.mov_r8_imm('al', 0x7B)
+    a.db(0xEE)
+    a.xor_r8('al')
+    a.db(0xEE)
+    a.db(0xFE, 0xC3)
+    a.loop('sl_isr_mute_anoff')
+    a.pop('cx');  a.pop('bx')
+    a.jmp('sl_isr_midi')
+
+    a.label('sl_isr_no_chain')
+    a.mov_mem_ax('chain_acc')
+    a.mov_r8_imm('al', 0x20)
+    a.db(0xE6, 0x20)
+
+    a.label('sl_isr_midi')
+    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)
+    a.db(0x00)
+    a.jne('sl_isr_done')
+    a.cld()
+    a.db(0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)
+    a.jnz('sl_isr_done')
+
+    a.db(0x8B, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+
+    a.label('sl_isr_frame')
+    a.lodsb()
+    a.xor_r8('ch')
+    a.mov_rr8('cl', 'al')
+    a.jcxz('sl_isr_next_wait')
+
+    a.mov_r16_imm('dx', 0x0330)
+    a.label('sl_isr_send')
+    a.lodsb()
+    a.db(0xEE)
+    a.loop('sl_isr_send')
+
+    a.label('sl_isr_next_wait')
+    a.db(0xAD)
+    a.cmp_ax_imm(0xFFFF)
+    a.je('sl_isr_loop')
+    a.db(0x85, 0xC0)
+    a.je('sl_isr_frame')
+
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+
+    a.label('sl_isr_done')
+    a.db(0x1F)
+    a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('ax')
+    a.db(0xCF)
+
+    a.label('sl_isr_loop')
+    a.mov_r16_imm('cx', 16)
+    a.xor_r8('bl')
+    a.label('sl_isr_anoff')
+    a.mov_r8_imm('al', 0xB0)
+    a.db(0x08, 0xD8)
+    a.mov_r16_imm('dx', 0x0330)
+    a.db(0xEE)
+    a.mov_r8_imm('al', 0x7B)
+    a.db(0xEE)
+    a.xor_r8('al')
+    a.db(0xEE)
+    a.db(0xFE, 0xC3)
+    a.loop('sl_isr_anoff')
+
+    a.mov_r16_label('si', 'event_data')
+    a.db(0xAD)
+    a.db(0x85, 0xC0)
+    a.je('sl_isr_frame')
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    a.jmp('sl_isr_done')
+
+    a.label('event_data')
+    a.db(cooked_track)
+    a.label('end_resident')
+
+    a.label('slave_init')
+    a.cld()
+    a.db(0x0E, 0x1F)
+
+    # Resolve real BIOS INT 08 target from current handler (MODS or prior slave).
+    # IVT[0x68] alone is unsafe — CONTEST / other code may repurpose int 68h.
+    a.mov_r8_imm('ah', 0x35)
+    a.mov_r8_imm('al', 0x08)
+    a.int21()
+    a.push('bx')
+    a.db(0x26, 0x8B, 0x47, 0xFE)  # MOV AX, ES:[BX-2]  (tag before isr entry)
+    a.cmp_ax_imm(0xB601)
+    a.je('sl_ivt_mods')
+    a.cmp_ax_imm(0xB602)
+    a.je('sl_ivt_slave')
+    a.pop('bx')
+    a.xor_r16('ax')
+    a.db(0x8E, 0xC0)
+    a.db(0x26, 0xA1, 0xA0, 0x01)
+    a.mov_mem_ax('old_08_off')
+    a.db(0x26, 0xA1, 0xA2, 0x01)
+    a.mov_mem_ax('old_08_seg')
+    a.jmp('sl_ivt_done')
+    a.label('sl_ivt_mods')
+    a.pop('bx')
+    a.mov_rr16('si', 'bx')
+    a.db(0x81, 0xEE)
+    a.dw(mods_isr_to_old08 & 0xFFFF)
+    a.db(0x26, 0x8B, 0x04)       # MOV AX, ES:[SI]  -> old_08_off in prior handler image
+    a.mov_mem_ax('old_08_off')
+    a.db(0x26, 0x8B, 0x44, 0x02)  # MOV AX, ES:[SI+2]
+    a.mov_mem_ax('old_08_seg')
+    a.db(0x26, 0x8B, 0x44, 0x0A)  # MOV AX, ES:[SI+10]  chain_step (match MODS / prior slave)
+    a.mov_mem_ax('chain_step')
+    a.db(0x26, 0x8B, 0x44, 0x0C)  # MOV AX, ES:[SI+12]  chain_thresh
+    a.mov_mem_ax('chain_thresh')
+    a.jmp('sl_ivt_done')
+    a.label('sl_ivt_slave')
+    a.pop('bx')
+    a.mov_rr16('si', 'bx')
+    slave_isr_to_old08 = a.labels['isr'] - a.labels['old_08_off']
+    a.db(0x81, 0xEE)
+    a.dw(slave_isr_to_old08 & 0xFFFF)
+    a.db(0x26, 0x8B, 0x04)
+    a.mov_mem_ax('old_08_off')
+    a.db(0x26, 0x8B, 0x44, 0x02)
+    a.mov_mem_ax('old_08_seg')
+    a.db(0x26, 0x8B, 0x44, 0x0A)
+    a.mov_mem_ax('chain_step')
+    a.db(0x26, 0x8B, 0x44, 0x0C)
+    a.mov_mem_ax('chain_thresh')
+    a.label('sl_ivt_done')
+
+    # No MPU 0xFF / UART re-init — MODS already put MPU-401 in UART mode at TSR install.
+    # Re-running reset (old slave_init) clears GM state → piano until PCs arrive; the
+    # embedded FUSION path only switched data_ptr and kept the same hardware state.
+
+    a.mov_r16_imm('ax', 0x2508)
+    a.mov_r16_label('dx', 'isr')
+    a.int21()
+
+    a.mov_r16_label('si', 'event_data')
+    a.db(0xAD)
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+
+    end_addr = a.labels['end_resident']
+    tsr_paras = (end_addr + 0x0F) >> 4
+    a.mov_r16_imm('dx', tsr_paras)
+    a.mov_r16_imm('ax', 0x3100)
+    a.int21()
+
+    a.mov_r16_imm('ax', 0x4C00)
+    a.int21()
+
+    a.resolve()
     return bytes(a.buf)
 
 
@@ -1695,6 +2211,7 @@ if __name__ == "__main__":
 
     midi_path = os.path.join(GAME_DIR, "SYS", "MAIN.mid")
     fusion_path = os.path.join(GAME_DIR, "SYS", "FUSION.mid")
+    transformed_path = os.path.join(GAME_DIR, "SYS", "TRANSFORMED.MID")
 
     if os.path.exists(midi_path):
         print("Parsing MAIN.mid...")
@@ -1716,17 +2233,47 @@ if __name__ == "__main__":
         cooked_fusion = cook_events(fev, fdiv, target_hz=COOK_HZ)
         print(f"  Cooked FUSION: {len(cooked_fusion)} bytes")
     else:
-        print("  SYS/FUSION.mid not found — fight music falls back to MAIN")
-        cooked_fusion = cooked_main
+        print("  SYS/FUSION.mid not found — embedded fight slot uses silent stub (not a second MAIN copy)")
+        cooked_fusion = silent
 
-    print("Building MODS.COM...")
-    mods_bin = build_mods_com(cooked_main, cooked_fusion)
-    if len(mods_bin) > 65280:
-        print(f"  ERROR: MODS.COM too large ({len(mods_bin)} bytes, limit ~65280)")
+    if os.path.exists(transformed_path):
+        print("Parsing TRANSFORMED.MID...")
+        tev, tdiv = parse_midi(transformed_path)
+        print(f"Cooking TRANSFORMED (target rate: {COOK_HZ:.1f} Hz)...")
+        cooked_transform = cook_events(tev, tdiv, target_hz=COOK_HZ)
+        print(f"  Cooked TRANSFORMED: {len(cooked_transform)} bytes")
+    else:
+        print("  SYS/TRANSFORMED.MID not found — contest music falls back to MAIN")
+        cooked_transform = cooked_main
+
+    com_limit = 65280
+
+    print("Building MODS.COM (MAIN + embedded FUSION + router)...")
+    mods_bin, mods_isr_to_old08 = build_mods_com(cooked_main, cooked_fusion)
+    if len(mods_bin) > com_limit:
+        print(f"  ERROR: MODS.COM too large ({len(mods_bin)} bytes, limit ~{com_limit})")
         sys.exit(1)
     mods_path = os.path.join(GAME_DIR, "MODS.COM")
     open(mods_path, "wb").write(mods_bin)
     print(f"  Written {len(mods_bin)} bytes to MODS.COM")
+
+    print("Building SYS/FIGHTBGM.COM (legacy satellite — not used by MODS router)...")
+    fight_bin = build_music_slave_com(cooked_fusion, mods_isr_to_old08)
+    if len(fight_bin) > com_limit:
+        print(f"  ERROR: FIGHTBGM.COM too large ({len(fight_bin)} bytes)")
+        sys.exit(1)
+    fight_path = os.path.join(GAME_DIR, "SYS", "FIGHTBGM.COM")
+    open(fight_path, "wb").write(fight_bin)
+    print(f"  Written {len(fight_bin)} bytes to SYS/FIGHTBGM.COM")
+
+    print("Building SYS/TRANSFORM.COM (TRANSFORMED)...")
+    tr_bin = build_music_slave_com(cooked_transform, mods_isr_to_old08)
+    if len(tr_bin) > com_limit:
+        print(f"  ERROR: TRANSFORM.COM too large ({len(tr_bin)} bytes)")
+        sys.exit(1)
+    tr_path = os.path.join(GAME_DIR, "SYS", "TRANSFORM.COM")
+    open(tr_path, "wb").write(tr_bin)
+    print(f"  Written {len(tr_bin)} bytes to SYS/TRANSFORM.COM")
 
     print("Patching PLAY.COM...")
     if patch_play_com():

@@ -350,34 +350,34 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     # Full register save deferred to MIDI processing / BIOS chain paths.
     a.label('isr')
     a.push('ax')
-    a.db(0x1E)                   # push ds
-    a.db(0x0E, 0x1F)            # push cs; pop ds
 
-    # ---- Chain prescaler ----
-    a.mov_ax_mem('chain_acc')
-    a.db(0x03, 0x06); a._fixup('abs16', 'chain_step'); a._word(0)  # ADD AX, [chain_step]
-    a.db(0x3B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)  # CMP AX, [chain_thresh]
+    # ---- Chain prescaler (all memory via CS: prefix — no DS setup needed) ----
+    a.db(0x2E, 0xA1); a._fixup('abs16', 'chain_acc'); a._word(0)  # MOV AX, CS:[chain_acc]
+    a.db(0x2E, 0x03, 0x06); a._fixup('abs16', 'chain_step'); a._word(0)  # ADD AX, CS:[chain_step]
+    a.db(0x2E, 0x3B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)  # CMP AX, CS:[chain_thresh]
     a.jb('isr_no_chain')
 
-    # ---- Chain tick: call BIOS, F11 check, then fall through to MIDI ----
-    a.db(0x2B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)
-    a.mov_mem_ax('chain_acc')
+    # ---- Chain tick: save acc, call BIOS, F11, fall through to MIDI ----
+    a.db(0x2E, 0x2B, 0x06); a._fixup('abs16', 'chain_thresh'); a._word(0)
+    a.db(0x2E, 0xA3); a._fixup('abs16', 'chain_acc'); a._word(0)  # MOV CS:[chain_acc], AX
     a.db(0x9C)                   # pushf
-    a.db(0xFF, 0x1E)             # call far [old_08_off]
+    a.db(0x2E, 0xFF, 0x1E)      # call far CS:[old_08_off]
     a._fixup('abs16', 'old_08_off'); a._word(0)
 
-    # F11: mute/unmute (chain ticks only)
+    # F11: mute/unmute (chain ticks only, needs DS=CS for prev_scan/muted)
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)            # push cs; pop ds
     a.db(0xE4, 0x60)            # in al, 0x60
     a.db(0x3A, 0x06); a._fixup('abs16', 'prev_scan'); a._word(0)
-    a.je('isr_midi')
+    a.je('isr_f11_done')
     a.db(0xA2); a._fixup('abs16', 'prev_scan'); a._word(0)
     a.cmp_al_imm(0x57)
-    a.jne('isr_midi')
+    a.jne('isr_f11_done')
     a.db(0x80, 0x36); a._fixup('abs16', 'muted'); a._word(0)
     a.db(0x01)
     a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)
     a.db(0x00)
-    a.je('isr_midi')
+    a.je('isr_f11_done')
     a.push('bx');  a.push('cx');  a.push('dx')
     a.mov_r16_imm('cx', 16)
     a.xor_r8('bl')
@@ -393,24 +393,28 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.db(0xFE, 0xC3)
     a.loop('isr_mute_anoff')
     a.pop('dx');  a.pop('cx');  a.pop('bx')
+    a.label('isr_f11_done')
+    a.db(0x1F)                   # pop ds
     a.jmp('isr_midi')
 
-    # ---- Non-chain: EOI + fast MIDI check ----
+    # ---- Non-chain fast path: EOI + DEC wait_ctr, no DS change ----
     a.label('isr_no_chain')
-    a.mov_mem_ax('chain_acc')
+    a.db(0x2E, 0xA3); a._fixup('abs16', 'chain_acc'); a._word(0)  # MOV CS:[chain_acc], AX
     a.mov_r8_imm('al', 0x20)
     a.db(0xE6, 0x20)            # out 0x20, al  (EOI)
 
     a.label('isr_midi')
     # Quick bail: muted?
-    a.db(0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)
+    a.db(0x2E, 0x80, 0x3E); a._fixup('abs16', 'muted'); a._word(0)  # CMP BYTE CS:[muted], 0
     a.db(0x00)
     a.jne('isr_fast_done')
-    # Quick bail: DEC wait_ctr; if still >0, we're done
-    a.db(0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)
+    # Quick bail: DEC wait_ctr
+    a.db(0x2E, 0xFF, 0x0E); a._fixup('abs16', 'wait_ctr'); a._word(0)  # DEC WORD CS:[wait_ctr]
     a.jnz('isr_fast_done')
 
-    # ---- wait_ctr hit 0: full MIDI processing (push remaining regs) ----
+    # ---- wait_ctr hit 0: full MIDI processing (push remaining regs + set DS) ----
+    a.db(0x1E)                   # push ds
+    a.db(0x0E, 0x1F)            # push cs; pop ds
     a.push('bx');  a.push('cx');  a.push('dx');  a.push('si')
     a.db(0x06)                   # push es
     a.mov_ax_mem('stream_seg')
@@ -462,8 +466,8 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('isr_midi_done')
     a.db(0x07)                   # pop es
     a.pop('si');  a.pop('dx');  a.pop('cx');  a.pop('bx')
-    a.label('isr_fast_done')
     a.db(0x1F)                   # pop ds
+    a.label('isr_fast_done')
     a.pop('ax')
     a.db(0xCF)                   # iret
 

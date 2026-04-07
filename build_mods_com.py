@@ -1407,6 +1407,25 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
+    # all_weapons=1: bypass weapon blacklist (keep Sword blocked — can't be picked up)
+    # NOP the Bomb reject JZ at 0xBE9C
+    a.mov_al_mem('flag_all_weapons')
+    a.mov_r16_imm('cx', 0x0000)
+    a.mov_r16_imm('dx', 0xBE9C)
+    a.mov_r16_label('si', 'nop2')
+    a.mov_r16_label('di', 'wblack_orig')
+    a.mov_r8_imm('bl', 2)
+    a.call('apply_patch')
+
+    # After Sword check, JMP to accept (skip +/Bow/Milk checks) at 0xBEAE
+    a.mov_al_mem('flag_all_weapons')
+    a.mov_r16_imm('cx', 0x0000)
+    a.mov_r16_imm('dx', 0xBEAE)
+    a.mov_r16_label('si', 'wblack_skip')
+    a.mov_r16_label('di', 'wblack_cont')
+    a.mov_r8_imm('bl', 2)
+    a.call('apply_patch')
+
     # fast_mp=1: double MP recovery (ADD 2 instead of INC at 0x1571E, 13 bytes)
     a.mov_al_mem('flag_fast_mp')
     a.mov_r16_imm('cx', 0x0001)
@@ -1760,6 +1779,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('jl_byte');      a.db(0x7C)
     a.label('wtype_all');    a.db(0x0C)
     a.label('wtype_orig');   a.db(0x0A)
+    a.label('nop2');          a.db(0x90, 0x90)
+    a.label('wblack_orig');  a.db(0x74, 0x5A)
+    a.label('wblack_skip');  a.db(0xEB, 0x46)
+    a.label('wblack_cont');  a.db(0x8B, 0xC6)
     a.label('flag_julian');  a.db(0)
     a.label('flag_free_run');a.db(0)
     a.label('flag_free_jump'); a.db(0)

@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-"/Applications/DOSBox Staging.app/Contents/MacOS/dosbox" -c "mount c \"$SCRIPT_DIR\"" -c "c:" -c "PLAY.COM"
+cd "$(dirname "$0")"
+"/Applications/DOSBox Staging.app/Contents/MacOS/dosbox" -conf dosbox.conf
 sleep 2
 osascript -e 'tell application "Terminal" to close front window' &>/dev/null &

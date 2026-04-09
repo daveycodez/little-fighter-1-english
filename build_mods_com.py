@@ -1009,7 +1009,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('skip_bgm_alloc')
 
     # -- search for each option --
-    a.mov_r16_label('si', 'str_julian')
+    a.mov_r16_label('si', 'str_unlock_julian')
     a.call('search')
     a.mov_mem_al('flag_julian')
 
@@ -1773,7 +1773,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('fn_start');     a.db("SYS\\START.EXE\x00")
     a.label('fn_fight');     a.db("SYS\\FIGHT.EXE\x00")
     # (fn_*_bgm moved to resident section for reload_fight_bgm)
-    a.label('str_julian');   a.db("julian=1\x00")
+    a.label('str_unlock_julian'); a.db("unlock_julian=1\x00")
     a.label('str_free_run'); a.db("free_run=1\x00")
     a.label('str_free_jump');a.db("free_jump=1\x00")
     a.label('str_free_supers');a.db("free_supers=1\x00")

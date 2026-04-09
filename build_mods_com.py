@@ -538,6 +538,11 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('music_switch_fight')
     a.call('all_notes_off_res')
     a.db(0x0E, 0x1F)            # push cs; pop ds
+    # Clear gore_once flags for the new fight
+    a.mov_mem16_imm('gore_once_w0', 0)
+    a.mov_mem16_imm('gore_once_w1', 0)
+    a.mov_mem16_imm('gore_once_w2', 0)
+    a.mov_mem16_imm('gore_once_w3', 0)
     a.mov_ax_mem('fight_seg')
     a.db(0x0B, 0xC0)            # OR AX, AX
     a.je('msf_done')             # seg=0 → alloc failed, keep current
@@ -886,6 +891,95 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('fn_fut_bgm_sys'); a.db("SYS\\FUTURE.BGM\x00")
     a.label('fn_cat_bgm');     a.db("CATSTRPH.BGM\x00")
     a.label('fn_cat_bgm_sys'); a.db("SYS\\CATSTRPH.BGM\x00")
+
+    # -- Gore: per-entity "already spawned" flags, cleared each fight --
+    a.label('gore_once')
+    a.label('gore_once_w0'); a.db(0, 0)
+    a.label('gore_once_w1'); a.db(0, 0)
+    a.label('gore_once_w2'); a.db(0, 0)
+    a.label('gore_once_w3'); a.db(0, 0)
+
+    # -- Gore INT 60h handler (resident) --
+    # Hooked from corpse blit site (0x1916C): replaces MOV AX,0001h with
+    # INT 60h + NOP.  SI = entity index at the blit site, so we compute
+    # BX = SI*52 to reach the entity struct.  CS:[gore_once + SI] prevents
+    # spawning more than one Head per death (cleared in music_switch_fight).
+    # After the spawn (or skip), sets AX = 0x69 (gore sprite x) and IRETs
+    # — caller then does PUSH AX which feeds the correct x to the blit.
+    #
+    # Copies X, Y (with upward offset), and Z from the dying character so
+    # the head appears in the same lane / depth and slightly above the corpse.
+    # Scans weapon slots 25-29 for an empty slot and initialises all 16
+    # entity fields (matching spawn_weapon at 061D:4861) to create a Head.
+    a.label('gore_isr')
+    a.db(
+        0x53,               # PUSH BX
+        0x51,               # PUSH CX
+        0x52,               # PUSH DX
+        0x57,               # PUSH DI
+        0x8B, 0xC6,         # MOV AX, SI
+        0xBA, 0x34, 0x00,   # MOV DX, 0034h  (stride=52)
+        0xF7, 0xEA,         # IMUL DX
+        0x8B, 0xD8,         # MOV BX, AX
+        0x89, 0xDF,         # MOV DI, BX     (save entity base in DI)
+        0x83, 0xFE, 0x08,   # CMP SI, 8
+    )
+    a.jb('gore_bounds_ok')   # SI < 8 → proceed
+    a.jmp_near('gore_done')  # SI >= 8 → out of bounds, skip (needs rel16)
+    a.label('gore_bounds_ok')
+    # CMP BYTE CS:[SI + gore_once], 0
+    a._emit(0x2E, 0x80, 0xBC); a._fixup('abs16', 'gore_once'); a._word(0)
+    a._emit(0x00)
+    a.jne('gore_done')      # already spawned for this entity
+    # MOV BYTE CS:[SI + gore_once], 1
+    a._emit(0x2E, 0xC6, 0x84); a._fixup('abs16', 'gore_once'); a._word(0)
+    a._emit(0x01)
+    # Scan weapon slots 25-29 for an empty slot
+    a.db(0xBB, 0x14, 0x05)  # MOV BX, 0514h  (slot 25 = 25*52)
+    a.db(0xB9, 0x05, 0x00)  # MOV CX, 5
+    a.label('gore_scan')
+    a.db(0x83, 0xBF, 0xF2, 0x33, 0x00)  # CMP WORD [BX+33F2h], 0
+    a.je('gore_found')
+    a.db(0x83, 0xC3, 0x34)  # ADD BX, 52
+    a.loop('gore_scan')
+    a.jmp('gore_done')      # no free slot
+    a.label('gore_found')
+    a.db(
+        0x33, 0xC0,                             # XOR AX, AX
+        0x89, 0x87, 0x0A, 0x34,                 # MOV [BX+340Ah], AX  (0)
+        0x89, 0x87, 0x08, 0x34,                 # MOV [BX+3408h], AX  (0)
+        0x89, 0x87, 0x06, 0x34,                 # MOV [BX+3406h], AX  (0)
+        0x89, 0x87, 0x14, 0x34,                 # MOV [BX+3414h], AX  (0)
+        0x89, 0x87, 0x12, 0x34,                 # MOV [BX+3412h], AX  (0 = frame)
+        0x89, 0x87, 0x16, 0x34,                 # MOV [BX+3416h], AX  (0 = HP)
+        0xC7, 0x87, 0xF2, 0x33, 0x02, 0x00,    # MOV WORD [BX+33F2h], 2   (entity type)
+        0xC7, 0x87, 0x18, 0x34, 0x0A, 0x00,    # MOV WORD [BX+3418h], 10  (Head)
+        0xC7, 0x87, 0xF8, 0x33, 0x06, 0x00,    # MOV WORD [BX+33F8h], 6   (state)
+        0xC7, 0x87, 0x04, 0x34, 0xFF, 0xFF,    # MOV WORD [BX+3404h], -1
+        0xC7, 0x87, 0x02, 0x34, 0x01, 0x00,    # MOV WORD [BX+3402h], 1   (facing right)
+        0xC7, 0x87, 0x10, 0x34, 0x08, 0x00,    # MOV WORD [BX+3410h], 8
+        0xC7, 0x87, 0x0E, 0x34, 0x1E, 0x00,    # MOV WORD [BX+340Eh], 30
+        # Copy X from dying character
+        0x8B, 0x85, 0xFC, 0x33,                 # MOV AX, [DI+33FCh]  (src x)
+        0x89, 0x87, 0xFC, 0x33,                 # MOV [BX+33FCh], AX  (dst x)
+        # Copy Y from dying character + 1
+        0x8B, 0x85, 0xFE, 0x33,                 # MOV AX, [DI+33FEh]  (src y)
+        0x05, 0x01, 0x00,                       # ADD AX, 1
+        0x89, 0x87, 0xFE, 0x33,                 # MOV [BX+33FEh], AX  (dst y)
+        # Copy Z with upward offset (spawn above corpse, gravity pulls it down)
+        0x8B, 0x85, 0x00, 0x34,                 # MOV AX, [DI+3400h]  (src z)
+        0x2D, 0x0C, 0x00,                       # SUB AX, 12
+        0x89, 0x87, 0x00, 0x34,                 # MOV [BX+3400h], AX  (dst z)
+    )
+    a.label('gore_done')
+    a.db(
+        0x5F,                                   # POP DI
+        0x5A,                                   # POP DX
+        0x59,                                   # POP CX
+        0x5B,                                   # POP BX
+        0xB8, 0x69, 0x00,                       # MOV AX, 0069h  (gore sprite x)
+        0xCF,                                   # IRET
+    )
 
     # -- Cooked MIDI (resident): MAIN only (fight streams loaded into allocated memory)
     a.label('event_data')
@@ -1415,14 +1509,15 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
-    # all_weapons=1: bypass weapon blacklist (keep Sword blocked — can't be picked up)
-    # NOP the Bomb reject JZ at 0xBE9C
+    # all_weapons=1: change Bomb blacklist → Head blacklist at 0xBE9B
+    # CMP [BX+3418h], 5 (Bomb) → CMP [BX+3418h], 10 (Head)
+    # Bomb can now spawn; Head is blocked (only appears via gore death)
     a.mov_al_mem('flag_all_weapons')
     a.mov_r16_imm('cx', 0x0000)
-    a.mov_r16_imm('dx', 0xBE9C)
-    a.mov_r16_label('si', 'nop2')
-    a.mov_r16_label('di', 'wblack_orig')
-    a.mov_r8_imm('bl', 2)
+    a.mov_r16_imm('dx', 0xBE9B)
+    a.mov_r16_label('si', 'wblack_head')
+    a.mov_r16_label('di', 'wblack_bomb')
+    a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
     # After Sword check, JMP to accept (skip +/Bow/Milk checks) at 0xBEAE
@@ -1559,14 +1654,17 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 4)
     a.call('apply_patch')
 
-    # gore: patch corpse blit X coord from 0x01 (frame 36) to 0x69 (frame 40)
-    # in the MOV AX,0001h before the CALL to FUN_152b_072e at file offset 0x1916D
+    # gore: hook corpse blit at file offset 0x1916C
+    # Original: B8 01 00  (MOV AX, 0001h — normal corpse sprite x=1)
+    # Patched:  CD 60 90  (INT 60h + NOP — handler sets AX=0x69 for gore
+    #           sprite and spawns a Head weapon on first invocation)
+    # The PUSH AX at 0x1916F remains and pushes the handler's AX value.
     a.mov_al_mem('flag_gore')
     a.mov_r16_imm('cx', 0x0001)
-    a.mov_r16_imm('dx', 0x916D)
-    a.mov_r16_label('si', 'gore_x_on')
-    a.mov_r16_label('di', 'gore_x_off')
-    a.mov_r8_imm('bl', 1)
+    a.mov_r16_imm('dx', 0x916C)
+    a.mov_r16_label('si', 'gore_blit_on')
+    a.mov_r16_label('di', 'gore_blit_off')
+    a.mov_r8_imm('bl', 3)
     a.call('apply_patch')
 
     # fix_camera: tighten entity position clamping to stay on-screen
@@ -1600,8 +1698,12 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     #  TSR / PIT decision
     # =================================================================
 
-    # Check if BGM requested → need TSR for music playback
+    # Need TSR for music playback (bgm=1) or gore INT 60h handler (gore=1)
     a.mov_al_mem('flag_bgm')
+    a.cmp_al_imm(1)
+    a.je('tsr_init')
+
+    a.mov_al_mem('flag_gore')
     a.cmp_al_imm(1)
     a.je('tsr_init')
 
@@ -1622,8 +1724,15 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.db(0xE6, 0x40)            # out 0x40, al  (hi byte of divisor)
     a.jmp_near('exit')
 
-    # -- TSR path: install music ISR --
+    # -- TSR path --
     a.label('tsr_init')
+
+    # Music setup (bgm=1 only): MPU-401, INT 08h, INT 21h hooks
+    a.mov_al_mem('flag_bgm')
+    a.cmp_al_imm(1)
+    a.je('do_bgm_tsr')
+    a.jmp_near('skip_bgm_tsr')
+    a.label('do_bgm_tsr')
 
     # Reset MPU-401
     a.mov_r16_imm('dx', 0x0331)
@@ -1655,6 +1764,26 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r16_label('dx', 'isr')
     a.int21()
 
+    # Init MAIN playback state + stream_seg = CS
+    a.db(0x8C, 0xC8)            # MOV AX, CS
+    a.mov_mem_ax('stream_seg')
+    a.mov_r16_label('si', 'event_data')
+    a.db(0xAD)                   # lodsw — first wait value
+    a.mov_mem_ax('wait_ctr')
+    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+
+    a.label('skip_bgm_tsr')
+
+    # Hook INT 21h — always in TSR mode (needed for bgm music switching
+    # AND/OR gore_once clearing between fights)
+    a.mov_r16_imm('ax', 0x3521)
+    a.int21()
+    a.db(0x89, 0x1E); a._fixup('abs16', 'old_21_off'); a._word(0)
+    a.db(0x8C, 0x06); a._fixup('abs16', 'old_21_seg'); a._word(0)
+    a.mov_r16_imm('ax', 0x2521)
+    a.mov_r16_label('dx', 'dos_isr')
+    a.int21()
+
     # Reprogram PIT if game_speed != 1.0
     a.mov_ax_mem('pit_divisor_val')
     a.db(0x85, 0xC0)            # test ax, ax
@@ -1670,22 +1799,16 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
 
     a.label('tsr_no_pit')
 
-    # Init MAIN playback state + stream_seg = CS
-    a.db(0x8C, 0xC8)            # MOV AX, CS
-    a.mov_mem_ax('stream_seg')
-    a.mov_r16_label('si', 'event_data')
-    a.db(0xAD)                   # lodsw — first wait value
-    a.mov_mem_ax('wait_ctr')
-    a.db(0x89, 0x36); a._fixup('abs16', 'data_ptr'); a._word(0)
+    # Gore ISR (gore=1 only): hook INT 60h → resident gore_isr handler
+    a.mov_al_mem('flag_gore')
+    a.cmp_al_imm(1)
+    a.jne('skip_gore_tsr')
 
-    # Hook INT 21h (FIGHT → active_track; AH=4Dh → MAIN)
-    a.mov_r16_imm('ax', 0x3521)
-    a.int21()
-    a.db(0x89, 0x1E); a._fixup('abs16', 'old_21_off'); a._word(0)
-    a.db(0x8C, 0x06); a._fixup('abs16', 'old_21_seg'); a._word(0)
-    a.mov_r16_imm('ax', 0x2521)
-    a.mov_r16_label('dx', 'dos_isr')
-    a.int21()
+    a.mov_r16_imm('ax', 0x2560)  # AH=25h, AL=60h — set INT 60h vector
+    a.mov_r16_label('dx', 'gore_isr')
+    a.int21()                     # DS:DX already points to our code (DS=CS in .COM)
+
+    a.label('skip_gore_tsr')
 
     # Go TSR — keep everything up to end_resident
     end_addr = a.labels['end_resident']
@@ -1822,6 +1945,8 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('wtype_all');    a.db(0x0C)
     a.label('wtype_orig');   a.db(0x0A)
     a.label('nop2');          a.db(0x90, 0x90)
+    a.label('wblack_head');  a.db(0x0A)       # Head weapon type
+    a.label('wblack_bomb');  a.db(0x05)       # Bomb weapon type (original)
     a.label('wblack_orig');  a.db(0x74, 0x5A)
     a.label('wblack_skip');  a.db(0xEB, 0x46)
     a.label('wblack_cont');  a.db(0x8B, 0xC6)
@@ -1857,8 +1982,9 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('add_mp7_orig');     a.db(0x83, 0x87, 0x20, 0x34, 0x07)
     a.label('add_mp_ax_orig');   a.db(0x01, 0x87, 0x20, 0x34)
     a.label('inc_hp_orig');      a.db(0xFF, 0x87, 0x16, 0x34)
-    a.label('gore_x_on');       a.db(0x69)   # x=105 (frame 40, gore corpse)
-    a.label('gore_x_off');      a.db(0x01)   # x=1   (frame 36, normal corpse)
+    # gore blit hook (3 bytes at 0x1916C)
+    a.label('gore_blit_on');  a.db(0xCD, 0x60, 0x90)   # INT 60h + NOP
+    a.label('gore_blit_off'); a.db(0xB8, 0x01, 0x00)   # MOV AX, 0001h (original)
     a.label('cam_left_on');     a.db(0x60, 0xFF)
     a.label('cam_left_off');    a.db(0x42, 0xFF)
     a.label('cam_right_on');    a.db(0xE0, 0x01)

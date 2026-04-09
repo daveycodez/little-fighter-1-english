@@ -1069,6 +1069,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.call('search')
     a.mov_mem_al('flag_bal_julian')
 
+    a.mov_r16_label('si', 'str_fix_camera')
+    a.call('search')
+    a.mov_mem_al('flag_fix_camera')
+
     # -- game_speed: parse decimal Hz value from mods.cfg --
     # Format: game_speed=XX.X (PIT Hz / FPS). 18.2=normal; with bgm, match COOK_HZ/N in build.
     # Parsed as value×10 (one decimal place), stored in value_x10_var.
@@ -1239,7 +1243,16 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.jc_far('exit')
     a.mov_mem_ax('cur_handle')
 
-    # free_run: offset 0x1A1A2, 4 bytes (run drain P1)
+    # free_run patch 1: offset 0x1B190, 5 bytes (dash init -10 MP)
+    a.mov_al_mem('flag_free_run')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0xB190)
+    a.mov_r16_label('si', 'nops')
+    a.mov_r16_label('di', 'sub_mp_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+
+    # free_run patch 2: offset 0x1A1A2, 4 bytes (run drain P1)
     a.mov_al_mem('flag_free_run')
     a.mov_r16_imm('cx', 0x0001)
     a.mov_r16_imm('dx', 0xA1A2)
@@ -1248,7 +1261,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 4)
     a.call('apply_patch')
 
-    # free_run: offset 0x1A20A, 4 bytes (run drain P2)
+    # free_run patch 3: offset 0x1A20A, 4 bytes (run drain P2)
     a.mov_al_mem('flag_free_run')
     a.mov_r16_imm('cx', 0x0001)
     a.mov_r16_imm('dx', 0xA20A)
@@ -1257,8 +1270,17 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 4)
     a.call('apply_patch')
 
-    # free_jump: offset 0x1B181, 1 byte (MP>=10 gate: JNL->JMP)
-    a.mov_al_mem('flag_free_jump')
+    # free_run patch 4: offset 0x1B1D7, 5 bytes (second -10 MP for run)
+    a.mov_al_mem('flag_free_run')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0xB1D7)
+    a.mov_r16_label('si', 'nops')
+    a.mov_r16_label('di', 'sub_mp_orig')
+    a.mov_r8_imm('bl', 5)
+    a.call('apply_patch')
+
+    # free_run patch 5: offset 0x1B181, 1 byte (first MP>=10 gate: JNL→JMP)
+    a.mov_al_mem('flag_free_run')
     a.mov_r16_imm('cx', 0x0001)
     a.mov_r16_imm('dx', 0xB181)
     a.mov_r16_label('si', 'jmp_byte')
@@ -1266,17 +1288,8 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
-    # free_jump: offset 0x1B190, 5 bytes (jump -10 MP)
-    a.mov_al_mem('flag_free_jump')
-    a.mov_r16_imm('cx', 0x0001)
-    a.mov_r16_imm('dx', 0xB190)
-    a.mov_r16_label('si', 'nops')
-    a.mov_r16_label('di', 'sub_mp_orig')
-    a.mov_r8_imm('bl', 5)
-    a.call('apply_patch')
-
-    # free_jump: offset 0x1B1C8, 1 byte (secondary MP>=10 gate: JNL->JMP)
-    a.mov_al_mem('flag_free_jump')
+    # free_run patch 6: offset 0x1B1C8, 1 byte (second MP>=10 gate: JNL→JMP)
+    a.mov_al_mem('flag_free_run')
     a.mov_r16_imm('cx', 0x0001)
     a.mov_r16_imm('dx', 0xB1C8)
     a.mov_r16_label('si', 'jmp_byte')
@@ -1284,7 +1297,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
-    # free_jump: offset 0x1B1D7, 5 bytes (secondary jump -10 MP for entity type 21)
+    # free_jump patch: offset 0x1B1D7, 5 bytes (jump -10 MP)
     a.mov_al_mem('flag_free_jump')
     a.mov_r16_imm('cx', 0x0001)
     a.mov_r16_imm('dx', 0xB1D7)
@@ -1542,6 +1555,28 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 4)
     a.call('apply_patch')
 
+    # fix_camera: tighten entity position clamping to stay on-screen
+    # Original: left = camera_x - 190 (FF42h), right = camera_x + 510 (01FEh)
+    # Fixed:    left = camera_x + 10  (000Ah), right = camera_x + 310 (0136h)
+    # Patches the 2-byte immediate in four ADD DX,imm16 instructions.
+    for dx_lo in [0x5BCD, 0x5BE4]:
+        a.mov_al_mem('flag_fix_camera')
+        a.mov_r16_imm('cx', 0x0001)
+        a.mov_r16_imm('dx', dx_lo)
+        a.mov_r16_label('si', 'cam_left_on')
+        a.mov_r16_label('di', 'cam_left_off')
+        a.mov_r8_imm('bl', 2)
+        a.call('apply_patch')
+
+    for dx_lo in [0x5BF9, 0x5C10]:
+        a.mov_al_mem('flag_fix_camera')
+        a.mov_r16_imm('cx', 0x0001)
+        a.mov_r16_imm('dx', dx_lo)
+        a.mov_r16_label('si', 'cam_right_on')
+        a.mov_r16_label('di', 'cam_right_off')
+        a.mov_r8_imm('bl', 2)
+        a.call('apply_patch')
+
     # Close FIGHT.EXE
     a.mov_bx_mem('cur_handle')
     a.mov_r8_imm('ah', 0x3E)
@@ -1753,6 +1788,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('str_no_mp_hit');a.db("no_mp_on_hit=1\x00")
     a.label('str_practice');a.db("practice=1\x00")
     a.label('str_bal_julian');a.db("balanced_julian=1\x00")
+    a.label('str_fix_camera');a.db("fix_camera=1\x00")
     a.label('str_bgm');      a.db("bgm=1\x00")
     a.label('str_game_speed'); a.db("game_speed=\x00")
     a.label('julian_on');    a.db(0x90, 0x90)
@@ -1789,6 +1825,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('flag_no_mp_hit'); a.db(0)
     a.label('flag_practice'); a.db(0)
     a.label('flag_bal_julian'); a.db(0)
+    a.label('flag_fix_camera'); a.db(0)
     a.label('flag_bgm');     a.db(0)
     a.label('rate_value');   a.dw(0x012C)
     a.label('cur_handle');   a.dw(0)
@@ -1804,6 +1841,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('add_mp7_orig');     a.db(0x83, 0x87, 0x20, 0x34, 0x07)
     a.label('add_mp_ax_orig');   a.db(0x01, 0x87, 0x20, 0x34)
     a.label('inc_hp_orig');      a.db(0xFF, 0x87, 0x16, 0x34)
+    a.label('cam_left_on');     a.db(0x60, 0xFF)
+    a.label('cam_left_off');    a.db(0x42, 0xFF)
+    a.label('cam_right_on');    a.db(0xE0, 0x01)
+    a.label('cam_right_off');   a.db(0xFE, 0x01)
     a.label('sub_mp_12');       a.db(0x83, 0xAF, 0x20, 0x34, 0x0C)
 
     a.label('fast_mp_on');     a.db(0x8B, 0xC6, 0xB2, 0x34, 0xF7, 0xEA, 0x8B, 0xD8, 0x83, 0x87, 0x20, 0x34, 0x02)

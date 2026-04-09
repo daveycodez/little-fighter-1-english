@@ -1069,6 +1069,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.call('search')
     a.mov_mem_al('flag_bal_julian')
 
+    a.mov_r16_label('si', 'str_gore')
+    a.call('search')
+    a.mov_mem_al('flag_gore')
+
     a.mov_r16_label('si', 'str_fix_camera')
     a.call('search')
     a.mov_mem_al('flag_fix_camera')
@@ -1555,6 +1559,16 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 4)
     a.call('apply_patch')
 
+    # gore: patch corpse blit X coord from 0x01 (frame 36) to 0x69 (frame 40)
+    # in the MOV AX,0001h before the CALL to FUN_152b_072e at file offset 0x1916D
+    a.mov_al_mem('flag_gore')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0x916D)
+    a.mov_r16_label('si', 'gore_x_on')
+    a.mov_r16_label('di', 'gore_x_off')
+    a.mov_r8_imm('bl', 1)
+    a.call('apply_patch')
+
     # fix_camera: tighten entity position clamping to stay on-screen
     # Original: left = camera_x - 190 (FF42h), right = camera_x + 510 (01FEh)
     # Fixed:    left = camera_x + 10  (000Ah), right = camera_x + 310 (0136h)
@@ -1788,6 +1802,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('str_no_mp_hit');a.db("no_mp_on_hit=1\x00")
     a.label('str_practice');a.db("practice=1\x00")
     a.label('str_bal_julian');a.db("balanced_julian=1\x00")
+    a.label('str_gore');     a.db("gore=1\x00")
     a.label('str_fix_camera');a.db("fix_camera=1\x00")
     a.label('str_bgm');      a.db("bgm=1\x00")
     a.label('str_game_speed'); a.db("game_speed=\x00")
@@ -1825,6 +1840,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('flag_no_mp_hit'); a.db(0)
     a.label('flag_practice'); a.db(0)
     a.label('flag_bal_julian'); a.db(0)
+    a.label('flag_gore');    a.db(0)
     a.label('flag_fix_camera'); a.db(0)
     a.label('flag_bgm');     a.db(0)
     a.label('rate_value');   a.dw(0x012C)
@@ -1841,6 +1857,8 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('add_mp7_orig');     a.db(0x83, 0x87, 0x20, 0x34, 0x07)
     a.label('add_mp_ax_orig');   a.db(0x01, 0x87, 0x20, 0x34)
     a.label('inc_hp_orig');      a.db(0xFF, 0x87, 0x16, 0x34)
+    a.label('gore_x_on');       a.db(0x69)   # x=105 (frame 40, gore corpse)
+    a.label('gore_x_off');      a.db(0x01)   # x=1   (frame 36, normal corpse)
     a.label('cam_left_on');     a.db(0x60, 0xFF)
     a.label('cam_left_off');    a.db(0x42, 0xFF)
     a.label('cam_right_on');    a.db(0xE0, 0x01)

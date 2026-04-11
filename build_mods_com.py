@@ -1645,6 +1645,19 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r8_imm('bl', 1)
     a.call('apply_patch')
 
+    # practice: skip secondary CPU AI block (JG +3 → NOP NOP at 0x1ABD3)
+    # After the practice JMP lands at 0x1ABA5, CPU entities (3404 > 4) still
+    # enter a second AI path at 0x1ABD8 that calls FUN_161d_4bdf and can
+    # trigger supers. NOP the JG gate so they fall through to the JMP far
+    # at 0x1ABD5 that humans already take, skipping the CPU AI block.
+    a.mov_al_mem('flag_practice')
+    a.mov_r16_imm('cx', 0x0001)
+    a.mov_r16_imm('dx', 0xABD3)
+    a.mov_r16_label('si', 'nop2')
+    a.mov_r16_label('di', 'jg_3_orig')
+    a.mov_r8_imm('bl', 2)
+    a.call('apply_patch')
+
     # balanced_julian: NOP Julian's passive HP regen (INC [BX+3416h] at 0x15282)
     a.mov_al_mem('flag_bal_julian')
     a.mov_r16_imm('cx', 0x0001)
@@ -1942,6 +1955,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('jng_byte');     a.db(0x7E)
     a.label('jnl_byte');     a.db(0x7D)
     a.label('jl_byte');      a.db(0x7C)
+    a.label('jg_3_orig');    a.db(0x7F, 0x03)
     a.label('wtype_all');    a.db(0x0C)
     a.label('wtype_orig');   a.db(0x0A)
     a.label('nop2');          a.db(0x90, 0x90)

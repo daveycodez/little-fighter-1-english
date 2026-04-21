@@ -280,7 +280,7 @@ free_jump=1
 fast_mp=1
 spawn_weapons=3
 all_weapons=1
-game_speed=30
+game_speed=24
 ```
 
 ### How it works

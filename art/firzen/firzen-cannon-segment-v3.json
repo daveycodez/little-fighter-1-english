@@ -1,0 +1,135 @@
+{
+  "method": "Exact native source pixels and horizontal mirroring",
+  "original_lead": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-ball-v1.png",
+  "original_lead_sha256": "0646d10937d76059cfd034b44edd76f1c2045c8bc807b6fa0996f71be104bac0",
+  "lead": "firzen-ball-v2.png",
+  "lead_size": [
+    29,
+    15
+  ],
+  "segment": "firzen-cannon-segment-v3.png",
+  "segment_size": [
+    29,
+    9
+  ],
+  "segment_source_columns": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    13,
+    13,
+    12,
+    11,
+    10,
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    0
+  ],
+  "segment_source_rows": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "extra_edge_extension": false,
+  "geometry_scaling": false,
+  "palette_source": "SYS/PAL, loaded starting at VGA index 1",
+  "palette_validated": true,
+  "indices": [
+    15,
+    65,
+    67,
+    68
+  ],
+  "color_conversion": [
+    {
+      "source_rgb": [
+        255,
+        255,
+        255
+      ],
+      "palette_index": 15,
+      "lf1_rgb": [
+        252,
+        252,
+        252
+      ]
+    },
+    {
+      "source_rgb": [
+        255,
+        255,
+        197
+      ],
+      "palette_index": 15,
+      "lf1_rgb": [
+        252,
+        252,
+        252
+      ]
+    },
+    {
+      "source_rgb": [
+        255,
+        255,
+        84
+      ],
+      "palette_index": 65,
+      "lf1_rgb": [
+        252,
+        252,
+        0
+      ]
+    },
+    {
+      "source_rgb": [
+        255,
+        191,
+        33
+      ],
+      "palette_index": 67,
+      "lf1_rgb": [
+        252,
+        180,
+        0
+      ]
+    },
+    {
+      "source_rgb": [
+        255,
+        159,
+        1
+      ],
+      "palette_index": 68,
+      "lf1_rgb": [
+        252,
+        144,
+        0
+      ]
+    }
+  ],
+  "preview_scale": 4
+}

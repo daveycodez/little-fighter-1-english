@@ -1,0 +1,13 @@
+{
+  "asset": "continuing Firzen Cannon projectile",
+  "native_size": [
+    29,
+    10
+  ],
+  "source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-cannon-segment-v1.png",
+  "method": "Exact native pixel edit: mirror the leftmost 9 columns onto the rightmost 9; preserve columns 0 through 19.",
+  "changed_pixels": 35,
+  "same_colors": true,
+  "same_width": true,
+  "preview_scale": 4
+}

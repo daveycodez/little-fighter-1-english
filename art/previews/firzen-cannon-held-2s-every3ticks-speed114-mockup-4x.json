@@ -1,0 +1,1709 @@
+{
+  "purpose": "offline animation mockup; not game implementation",
+  "character": {
+    "name": "Firzen",
+    "skin": [
+      83,
+      81
+    ],
+    "shirt": [
+      67,
+      68
+    ],
+    "trousers": [
+      132,
+      134
+    ],
+    "hair": 98
+  },
+  "poses": {
+    "2": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 2,
+      "body_crop": [
+        27,
+        1,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": [
+        0,
+        0
+      ],
+      "head_overlay": true,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": null,
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    },
+    "35": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 35,
+      "body_crop": [
+        261,
+        53,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": null,
+      "head_overlay": false,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": {
+        "source_index": 160,
+        "target_index": 98
+      },
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    },
+    "43": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 43,
+      "body_crop": [
+        157,
+        79,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": null,
+      "head_overlay": false,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": {
+        "source_index": 160,
+        "target_index": 98
+      },
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    }
+  },
+  "scale": 4,
+  "scaling": "nearest neighbor",
+  "native_stage_size": [
+    140,
+    41
+  ],
+  "projectile_size": [
+    29,
+    15
+  ],
+  "projectile": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-ball-v2.png",
+  "projectile_sha256": "838d9c92eea42fbd036739df11124d45ccc871c1d1fcc4de1e1eb773ca30c4db",
+  "projectile_changed": false,
+  "gif_colors_exact": true,
+  "timing_and_travel": "illustrative",
+  "timeline": [
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 450
+    },
+    {
+      "pose": 35,
+      "effects": [],
+      "duration": 180
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 33
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 0,
+      "elapsed_ms": 0.0
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 39
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 1,
+      "elapsed_ms": 54.94505494505495
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 46
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 2,
+      "elapsed_ms": 109.8901098901099
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 3,
+      "elapsed_ms": 164.83516483516485
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 4,
+      "elapsed_ms": 219.7802197802198
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 5,
+      "elapsed_ms": 274.72527472527474
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 6,
+      "elapsed_ms": 329.6703296703297
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 7,
+      "elapsed_ms": 384.61538461538464
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 8,
+      "elapsed_ms": 439.5604395604396
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 9,
+      "elapsed_ms": 494.50549450549454
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 10,
+      "elapsed_ms": 549.4505494505495
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 11,
+      "elapsed_ms": 604.3956043956044
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 12,
+      "elapsed_ms": 659.3406593406594
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 13,
+      "elapsed_ms": 714.2857142857143
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 14,
+      "elapsed_ms": 769.2307692307693
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 15,
+      "elapsed_ms": 824.1758241758242
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 16,
+      "elapsed_ms": 879.1208791208792
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 17,
+      "elapsed_ms": 934.0659340659341
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 18,
+      "elapsed_ms": 989.0109890109891
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 19,
+      "elapsed_ms": 1043.956043956044
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 20,
+      "elapsed_ms": 1098.901098901099
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 21,
+      "elapsed_ms": 1153.8461538461538
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 22,
+      "elapsed_ms": 1208.7912087912089
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 23,
+      "elapsed_ms": 1263.7362637362637
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 24,
+      "elapsed_ms": 1318.6813186813188
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 25,
+      "elapsed_ms": 1373.6263736263736
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 26,
+      "elapsed_ms": 1428.5714285714287
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 27,
+      "elapsed_ms": 1483.5164835164835
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 28,
+      "elapsed_ms": 1538.4615384615386
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 29,
+      "elapsed_ms": 1593.4065934065934
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 30,
+      "elapsed_ms": 1648.3516483516485
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 31,
+      "elapsed_ms": 1703.2967032967033
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 32,
+      "elapsed_ms": 1758.2417582417584
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 33,
+      "elapsed_ms": 1813.1868131868132
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 133
+        },
+        {
+          "kind": "segment",
+          "x": 114
+        },
+        {
+          "kind": "segment",
+          "x": 96
+        },
+        {
+          "kind": "segment",
+          "x": 77
+        },
+        {
+          "kind": "segment",
+          "x": 58
+        },
+        {
+          "kind": "segment",
+          "x": 39
+        }
+      ],
+      "duration": 50,
+      "phase": "hold",
+      "tick": 34,
+      "elapsed_ms": 1868.1318681318683
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 139
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 102
+        },
+        {
+          "kind": "segment",
+          "x": 83
+        },
+        {
+          "kind": "segment",
+          "x": 64
+        },
+        {
+          "kind": "segment",
+          "x": 46
+        }
+      ],
+      "duration": 60,
+      "phase": "hold",
+      "tick": 35,
+      "elapsed_ms": 1923.076923076923
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 127
+        },
+        {
+          "kind": "segment",
+          "x": 108
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 71
+        },
+        {
+          "kind": "segment",
+          "x": 52
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 20,
+      "phase": "hold",
+      "tick": 36,
+      "elapsed_ms": 1978.0219780219782
+    },
+    {
+      "pose": 35,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 111
+        },
+        {
+          "kind": "segment",
+          "x": 92
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 54
+        },
+        {
+          "kind": "segment",
+          "x": 36
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 0.0
+    },
+    {
+      "pose": 35,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 136
+        },
+        {
+          "kind": "segment",
+          "x": 117
+        },
+        {
+          "kind": "segment",
+          "x": 98
+        },
+        {
+          "kind": "segment",
+          "x": 79
+        },
+        {
+          "kind": "segment",
+          "x": 61
+        },
+        {
+          "kind": "segment",
+          "x": 42
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 54.94505494505495
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 123
+        },
+        {
+          "kind": "segment",
+          "x": 104
+        },
+        {
+          "kind": "segment",
+          "x": 86
+        },
+        {
+          "kind": "segment",
+          "x": 67
+        },
+        {
+          "kind": "segment",
+          "x": 48
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 109.8901098901099
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 111
+        },
+        {
+          "kind": "segment",
+          "x": 92
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 54
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 164.83516483516485
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 136
+        },
+        {
+          "kind": "segment",
+          "x": 117
+        },
+        {
+          "kind": "segment",
+          "x": 98
+        },
+        {
+          "kind": "segment",
+          "x": 79
+        },
+        {
+          "kind": "segment",
+          "x": 61
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 219.7802197802198
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 123
+        },
+        {
+          "kind": "segment",
+          "x": 104
+        },
+        {
+          "kind": "segment",
+          "x": 86
+        },
+        {
+          "kind": "segment",
+          "x": 67
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 274.72527472527474
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 111
+        },
+        {
+          "kind": "segment",
+          "x": 92
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 329.6703296703297
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 136
+        },
+        {
+          "kind": "segment",
+          "x": 117
+        },
+        {
+          "kind": "segment",
+          "x": 98
+        },
+        {
+          "kind": "segment",
+          "x": 79
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 384.61538461538464
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 123
+        },
+        {
+          "kind": "segment",
+          "x": 104
+        },
+        {
+          "kind": "segment",
+          "x": 86
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 439.5604395604396
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 111
+        },
+        {
+          "kind": "segment",
+          "x": 92
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 494.50549450549454
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 136
+        },
+        {
+          "kind": "segment",
+          "x": 117
+        },
+        {
+          "kind": "segment",
+          "x": 98
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 549.4505494505495
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 123
+        },
+        {
+          "kind": "segment",
+          "x": 104
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 604.3956043956044
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 111
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 659.3406593406594
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 136
+        },
+        {
+          "kind": "segment",
+          "x": 117
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 714.2857142857143
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 123
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 769.2307692307693
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        }
+      ],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 824.1758241758242
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 136
+        }
+      ],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 879.1208791208792
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 934.0659340659341
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 989.0109890109891
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 60,
+      "phase": "release",
+      "elapsed_ms": 1043.956043956044
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 1098.901098901099
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50,
+      "phase": "release",
+      "elapsed_ms": 1153.8461538461538
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 600
+    }
+  ],
+  "hold_ms": 2000,
+  "preview_fps": 18.2,
+  "gif_frame_timing": "Fixed-rate samples rounded cumulatively to GIF 10ms units",
+  "projectile_speed_pixels_per_second": 114.0,
+  "emission_interval_ticks": 3,
+  "emission_interval_ms": 164.83516483516485,
+  "emissions": [
+    {
+      "kind": "lead",
+      "tick": 0,
+      "time_ms": 0
+    },
+    {
+      "kind": "segment",
+      "tick": 3,
+      "time_ms": 164.83516483516485
+    },
+    {
+      "kind": "segment",
+      "tick": 6,
+      "time_ms": 329.6703296703297
+    },
+    {
+      "kind": "segment",
+      "tick": 9,
+      "time_ms": 494.50549450549454
+    },
+    {
+      "kind": "segment",
+      "tick": 12,
+      "time_ms": 659.3406593406594
+    },
+    {
+      "kind": "segment",
+      "tick": 15,
+      "time_ms": 824.1758241758242
+    },
+    {
+      "kind": "segment",
+      "tick": 18,
+      "time_ms": 989.0109890109891
+    },
+    {
+      "kind": "segment",
+      "tick": 21,
+      "time_ms": 1153.8461538461538
+    },
+    {
+      "kind": "segment",
+      "tick": 24,
+      "time_ms": 1318.6813186813188
+    },
+    {
+      "kind": "segment",
+      "tick": 27,
+      "time_ms": 1483.5164835164835
+    },
+    {
+      "kind": "segment",
+      "tick": 30,
+      "time_ms": 1648.3516483516485
+    },
+    {
+      "kind": "segment",
+      "tick": 33,
+      "time_ms": 1813.1868131868132
+    },
+    {
+      "kind": "segment",
+      "tick": 36,
+      "time_ms": 1978.0219780219782
+    }
+  ],
+  "segment": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-cannon-segment-v4.png",
+  "segment_size": [
+    29,
+    9
+  ],
+  "requested_gameplay": "Continue firing until cancelled or mana is exhausted; mockup demonstrates cancellation after hold.",
+  "outputs": {
+    "animation": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-held-2s-every3ticks-speed114-mockup-4x.gif",
+    "release": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-held-2s-every3ticks-speed114-release-4x.png",
+    "casting_native": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-held-2s-every3ticks-speed114-casting-native.png"
+  }
+}

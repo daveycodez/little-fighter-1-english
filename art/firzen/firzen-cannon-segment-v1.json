@@ -1,0 +1,139 @@
+{
+  "tool": "builtin image_gen",
+  "asset": "additional Firzen Cannon projectile",
+  "native_size": [
+    29,
+    10
+  ],
+  "lead_size": [
+    29,
+    15
+  ],
+  "same_width": true,
+  "same_colors": true,
+  "colors": [
+    [
+      255,
+      255,
+      255
+    ],
+    [
+      255,
+      255,
+      197
+    ],
+    [
+      255,
+      255,
+      84
+    ],
+    [
+      255,
+      191,
+      33
+    ],
+    [
+      255,
+      159,
+      1
+    ]
+  ],
+  "source": "/Users/david/.codex/generated_images/01a0efa4-5af0-7733-88d9-91deee0a6939/exec-5bfd271e-f634-45e0-93bf-68dbea2264ec.png",
+  "grid": {
+    "x_edges": [
+      40,
+      79,
+      118,
+      156,
+      195,
+      234,
+      272,
+      311,
+      350,
+      389,
+      428,
+      466,
+      505,
+      544,
+      582,
+      621,
+      660,
+      699,
+      738,
+      776,
+      815,
+      854,
+      892,
+      931,
+      970,
+      1009,
+      1048,
+      1086,
+      1125,
+      1164,
+      1202,
+      1241,
+      1280,
+      1319,
+      1358,
+      1396,
+      1435,
+      1474,
+      1512,
+      1551,
+      1590,
+      1629,
+      1668,
+      1706,
+      1745
+    ],
+    "y_edges": [
+      244,
+      284,
+      323,
+      363,
+      402,
+      442,
+      482,
+      521,
+      561,
+      600,
+      640
+    ],
+    "columns": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43
+    ]
+  },
+  "adaptation": "Remove 15 interior columns from long straight streaks to match lead width; preserve end shapes; no rescaling.",
+  "game_palette_converted": false,
+  "preview_scale": 4,
+  "generation_prompt": "Use case: precise-object-edit. Asset: ONE pixel-art continuing beam segment for Firzen Cannon in a Little Fighter 1 demake. Image 1 is the EDIT TARGET and approved leading Cannon artwork; Image 2 is the exact original LF2 trailing segment to match. Create a separate additional-projectile sprite: replace Image 1's round front energy ball with a horizontal elongated capsule of yellow/white energy, following Image 2. Keep the same coarse square pixel size and five flat colors from Image 1. Same 29 columns of logical pixels, with beam thickness about 9 logical pixels instead of the lead's 15. White core split into irregular long horizontal white streaks, pale yellow and lemon yellow around the core, gold edges, sparse orange at the two rounded/tapered ends. Balanced narrow luminous silhouette; no large round ball at either end. Direction horizontal, firing right. Preserve LF2's recognizable flattened repeating beam-body shape. The effect must be made of large crisp square pixel blocks on a uniform grid; no fine details or extra pixels inside blocks. Use only white RGB255,255,255; pale yellow255,255,197; lemon255,255,84; gold255,191,33; orange255,159,1. Transparent background, no black outline, no checkerboard, no text, no labels, no sprite-sheet lines, no blurred glow, no gradients, no antialiasing. One isolated sprite. Keep a little transparent padding so every block fits. Do not redraw the original leading projectile; the delivered image contains only the NEW flatter continuation segment."
+}

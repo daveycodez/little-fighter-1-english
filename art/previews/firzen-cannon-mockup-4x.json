@@ -1,0 +1,280 @@
+{
+  "purpose": "offline animation mockup; not game implementation",
+  "character": {
+    "name": "Firzen",
+    "skin": [
+      83,
+      81
+    ],
+    "shirt": [
+      67,
+      68
+    ],
+    "trousers": [
+      132,
+      134
+    ],
+    "hair": 98
+  },
+  "poses": {
+    "2": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 2,
+      "body_crop": [
+        27,
+        1,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": [
+        0,
+        0
+      ],
+      "head_overlay": true,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": null,
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    },
+    "35": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 35,
+      "body_crop": [
+        261,
+        53,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": null,
+      "head_overlay": false,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": {
+        "source_index": 160,
+        "target_index": 98
+      },
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    },
+    "43": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 43,
+      "body_crop": [
+        157,
+        79,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": null,
+      "head_overlay": false,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": {
+        "source_index": 160,
+        "target_index": 98
+      },
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    }
+  },
+  "scale": 4,
+  "scaling": "nearest neighbor",
+  "native_stage_size": [
+    140,
+    41
+  ],
+  "projectile_size": [
+    29,
+    15
+  ],
+  "projectile": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-ball-v1.png",
+  "projectile_sha256": "0646d10937d76059cfd034b44edd76f1c2045c8bc807b6fa0996f71be104bac0",
+  "projectile_changed": false,
+  "gif_colors_exact": true,
+  "timing_and_travel": "illustrative",
+  "timeline": [
+    [
+      2,
+      null,
+      450
+    ],
+    [
+      35,
+      null,
+      180
+    ],
+    [
+      43,
+      33,
+      70
+    ],
+    [
+      43,
+      41,
+      70
+    ],
+    [
+      43,
+      49,
+      70
+    ],
+    [
+      43,
+      57,
+      70
+    ],
+    [
+      35,
+      65,
+      70
+    ],
+    [
+      35,
+      73,
+      70
+    ],
+    [
+      2,
+      81,
+      70
+    ],
+    [
+      2,
+      89,
+      70
+    ],
+    [
+      2,
+      97,
+      70
+    ],
+    [
+      2,
+      105,
+      70
+    ],
+    [
+      2,
+      113,
+      70
+    ],
+    [
+      2,
+      121,
+      70
+    ],
+    [
+      2,
+      129,
+      70
+    ],
+    [
+      2,
+      137,
+      70
+    ],
+    [
+      2,
+      145,
+      70
+    ],
+    [
+      2,
+      153,
+      70
+    ],
+    [
+      2,
+      161,
+      70
+    ],
+    [
+      2,
+      169,
+      70
+    ],
+    [
+      2,
+      null,
+      600
+    ]
+  ],
+  "outputs": {
+    "animation": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-mockup-4x.gif",
+    "release": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-release-4x.png",
+    "casting_native": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-casting-native.png"
+  }
+}

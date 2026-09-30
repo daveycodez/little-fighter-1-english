@@ -1,0 +1,2349 @@
+{
+  "purpose": "offline animation mockup; not game implementation",
+  "character": {
+    "name": "Firzen",
+    "skin": [
+      83,
+      81
+    ],
+    "shirt": [
+      67,
+      68
+    ],
+    "trousers": [
+      132,
+      134
+    ],
+    "hair": 98
+  },
+  "poses": {
+    "2": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 2,
+      "body_crop": [
+        27,
+        1,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": [
+        0,
+        0
+      ],
+      "head_overlay": true,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": null,
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    },
+    "35": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 35,
+      "body_crop": [
+        261,
+        53,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": null,
+      "head_overlay": false,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": {
+        "source_index": 160,
+        "target_index": 98
+      },
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    },
+    "43": {
+      "character": {
+        "name": "Firzen",
+        "skin": [
+          83,
+          81
+        ],
+        "shirt": [
+          67,
+          68
+        ],
+        "trousers": [
+          132,
+          134
+        ],
+        "hair": 98
+      },
+      "frame": 43,
+      "body_crop": [
+        157,
+        79,
+        25,
+        25
+      ],
+      "head_size": [
+        17,
+        12
+      ],
+      "head_offset": null,
+      "head_overlay": false,
+      "transparent_index": 0,
+      "head_source": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-head-gameplay-v50.png",
+      "head_conversion": {
+        "conversion": "native RGBA grid; hue-preserving LF1 palette conversion",
+        "face_substitution": false,
+        "geometry_rescaling": false
+      },
+      "head_pixel_mismatches": 0,
+      "hair_recolor": {
+        "source_index": 160,
+        "target_index": 98
+      },
+      "rendering": "offline reproduction of LF1 standing/shared casting compositing; not an in-game screenshot"
+    }
+  },
+  "scale": 4,
+  "scaling": "nearest neighbor",
+  "native_stage_size": [
+    140,
+    41
+  ],
+  "projectile_size": [
+    29,
+    15
+  ],
+  "projectile": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-ball-v1.png",
+  "projectile_sha256": "0646d10937d76059cfd034b44edd76f1c2045c8bc807b6fa0996f71be104bac0",
+  "projectile_changed": false,
+  "gif_colors_exact": true,
+  "timing_and_travel": "illustrative",
+  "timeline": [
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 450
+    },
+    {
+      "pose": 35,
+      "effects": [],
+      "duration": 180
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "lead",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        },
+        {
+          "kind": "segment",
+          "x": 33
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 43,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        },
+        {
+          "kind": "segment",
+          "x": 41
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 35,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        },
+        {
+          "kind": "segment",
+          "x": 49
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 35,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        },
+        {
+          "kind": "segment",
+          "x": 57
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        },
+        {
+          "kind": "segment",
+          "x": 65
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        },
+        {
+          "kind": "segment",
+          "x": 73
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        },
+        {
+          "kind": "segment",
+          "x": 81
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        },
+        {
+          "kind": "segment",
+          "x": 89
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        },
+        {
+          "kind": "segment",
+          "x": 97
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        },
+        {
+          "kind": "segment",
+          "x": 105
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        },
+        {
+          "kind": "segment",
+          "x": 113
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        },
+        {
+          "kind": "segment",
+          "x": 121
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 129
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [
+        {
+          "kind": "segment",
+          "x": 137
+        }
+      ],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 50
+    },
+    {
+      "pose": 2,
+      "effects": [],
+      "duration": 600
+    }
+  ],
+  "hold_ms": 3000,
+  "segment": "/Users/david/Developer/little-fighter-1-english/art/firzen/firzen-cannon-segment-v2.png",
+  "segment_size": [
+    29,
+    10
+  ],
+  "requested_gameplay": "Continue firing until cancelled or mana is exhausted; mockup demonstrates cancellation after hold.",
+  "outputs": {
+    "animation": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-held-v2-mockup-4x.gif",
+    "release": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-held-v2-release-4x.png",
+    "casting_native": "/Users/david/Developer/little-fighter-1-english/art/previews/firzen-cannon-held-v2-casting-native.png"
+  }
+}

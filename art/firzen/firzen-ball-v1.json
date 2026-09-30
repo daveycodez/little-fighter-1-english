@@ -1,0 +1,97 @@
+{
+  "tool": "builtin image_gen",
+  "purpose": "LF1 pixel-scale Firzen Cannon concept using original LF2 colors",
+  "native_size": [
+    29,
+    15
+  ],
+  "game_palette_converted": false,
+  "source": "/Users/david/.codex/generated_images/01a0efa4-5af0-7733-88d9-91deee0a6939/exec-1f02023b-4670-4cec-b914-750691b7bd03.png",
+  "grid": {
+    "x_edges": [
+      19,
+      67,
+      115,
+      164,
+      212,
+      260,
+      308,
+      356,
+      404,
+      453,
+      501,
+      549,
+      597,
+      645,
+      693,
+      742,
+      790,
+      838,
+      886,
+      934,
+      982,
+      1031,
+      1079,
+      1127,
+      1175,
+      1223,
+      1271,
+      1320,
+      1368,
+      1416
+    ],
+    "y_edges": [
+      212,
+      260,
+      308,
+      356,
+      404,
+      452,
+      500,
+      548,
+      596,
+      644,
+      692,
+      740,
+      788,
+      836,
+      884,
+      932
+    ]
+  },
+  "colors": [
+    [
+      255,
+      255,
+      255
+    ],
+    [
+      255,
+      255,
+      197
+    ],
+    [
+      255,
+      255,
+      84
+    ],
+    [
+      255,
+      191,
+      33
+    ],
+    [
+      255,
+      159,
+      1
+    ]
+  ],
+  "extraction": "median of each authored square; no geometry rescaling",
+  "preview_scale": 4,
+  "generation_prompt": "Use case: stylized-concept. Asset type: ONE compact pixel-art projectile sprite, the leading head of Firzen Cannon, for a Little Fighter 1 demake. Reference image1 is the ORIGINAL LF2 firzen_ball sprite sheet; keep its yellow-gold beam with a round blazing front and white core. Reference image2 is actual LF1 projectiles at4x; use its very small scale and pixel density. Design directly on EXACTLY17 columns by13 rows of logical pixels. Enlarge that logical grid uniformly for this output, but do not add any smaller details. One17x13 sprite filling one17x13 logical canvas, no external padding. Facing right: an approximately11-pixel-tall round white/yellow energy head toward the right, trailing a shorter horizontal beam leftward. Keep the front rounded and energetic, the trail composed of a few sharp horizontal white streaks. Transparent background; leave the top and bottom logical rows transparent. Use LF2 firzen_ball colors and style, specifically flat white(255,255,255), pale yellow(255,255,197), bright lemon-yellow(255,255,84), gold(255,191,33), and orange(255,159,1). Sparse orange tips and yellow rim, clear luminous white core. Match the recognizable LF2 first-frame Cannon silhouette but simplify to these221 native pixels. Crisp square pixels, flat fills, no gradients, no antialiasing, no blurred glow, no black outline, no black background, no checkerboard, no grid, no text, no labels, no multiple sprites. This is a usable low-resolution bitmap asset, not a picture of pixel art. The entire sprite must fit the17x13 logical grid.",
+  "requested_grid": [
+    17,
+    13
+  ],
+  "grid_note": "Generation produced a 29x15 logical grid; extracted without distortion. This draft is larger than the standard 17x13 LF1 projectile cell."
+}

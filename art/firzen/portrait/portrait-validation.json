@@ -1,0 +1,27 @@
+{
+  "dimensions": [
+    50,
+    50
+  ],
+  "palette": "original SYS/PAL",
+  "indices": [
+    7,
+    10,
+    14,
+    15,
+    31,
+    34,
+    81,
+    82,
+    83,
+    97,
+    98
+  ],
+  "hair": [
+    97,
+    98
+  ],
+  "source": "builtin imagegen original close-up redraw, facing left",
+  "cleanup": "preferred illustration restored; minimal31/34iris planes and cropped-chin contour cleanup; original neck/shading retained",
+  "preview_scale": 4
+}

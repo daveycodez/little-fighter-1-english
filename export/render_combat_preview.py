@@ -9,7 +9,7 @@ not an implemented gameplay patch or a capture of the running DOS game.
 from pathlib import Path
 import argparse,hashlib,json,math
 from PIL import Image
-from render_character_preview import load_palette,read_grh,indexed,crop_pixels,original_characters,render_character
+from render_character_preview import load_palette,read_grh,indexed,crop_pixels,original_characters,render_character,color_pair
 from render_blast_preview import frame_samples
 
 
@@ -31,15 +31,20 @@ def main():
     parser.add_argument('--shot-ticks',type=int,default=3)
     parser.add_argument('--hold-seconds',type=float,default=2)
     parser.add_argument('--fps',type=float,default=18.2)
+    parser.add_argument('--post-release-ms',type=int,default=2300,help='Continue projectile travel after firing stops.')
+    parser.add_argument('--head',type=Path,default=Path('art/firzen/firzen-head-gameplay-v50.png'))
+    parser.add_argument('--hair',type=int,choices=range(1,151),default=98)
+    parser.add_argument('--shirt',type=color_pair,default=[66,77])
+    parser.add_argument('--trousers',type=color_pair,default=[11,10])
     parser.add_argument('--output',type=Path,default=Path('art/previews/firzen-cannon-vs-julian-road-16x9-4x.gif'))
     args=parser.parse_args()
-    if args.speed<=0 or args.shot_ticks<1 or not 0<args.fps<=100 or args.hold_seconds<=0:
+    if args.speed<=0 or args.shot_ticks<1 or not 0<args.fps<=100 or args.hold_seconds<=0 or args.post_release_ms<=0 or args.post_release_ms%10:
         parser.error('Use positive speed, cadence, hold duration and FPS <=100.')
     root=Path(__file__).resolve().parent.parent;palette=load_palette(root)
     background=road_background(root,palette)
     originals=original_characters(root)
-    firzen={'name':'Firzen','skin':[83,81],'shirt':[67,68],'trousers':[132,134],'hair':98}
-    head=root/'art/firzen/firzen-head-gameplay-v50.png'
+    firzen={'name':'Firzen','skin':[83,81],'shirt':args.shirt,'trousers':args.trousers,'hair':args.hair}
+    head=args.head if args.head.is_absolute() else root/args.head
     attacker={n:render_character(root,palette,firzen,n,head)[0].convert('RGBA') for n in [2,35,43]}
     julian={n:render_character(root,palette,originals['julian'],n)[0].convert('RGBA').transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             for n in [2,14,15,16,17,18]}
@@ -55,8 +60,8 @@ def main():
     if hold_ms%10:parser.error('GIF hold duration must be a multiple of 10ms.')
     timeline=[('idle',0,450),('windup',0,180)]
     timeline += [('hold',t,d) for t,d in frame_samples(hold_ms,args.fps)]
-    timeline += [('release',t+hold_ms,d) for t,d in frame_samples(1800,args.fps)]
-    timeline += [('pause',hold_ms+1800,700)]
+    timeline += [('release',t+hold_ms,d) for t,d in frame_samples(args.post_release_ms,args.fps)]
+    timeline += [('pause',hold_ms+args.post_release_ms,700)]
     firzen_x=70;ground_y=138;origin_y=ground_y-24;beam_y=origin_y+13;spawn_x=firzen_x+25
     julian_x=188;push=0;fall_tick=None;last_hit_tick=None
     shots=[];impacts=[];hit_events=[];render_log=[]
@@ -135,7 +140,7 @@ def main():
           'firzen':firzen,'julian':originals['julian'],'julian_frames':[2,14,15,16,17,18],
           'impact_source':'SYS/WEAPON.GRH','impact_frames':[46,47,48],
           'fps':args.fps,'projectile_speed_pixels_per_second':args.speed,
-          'shot_interval_ticks':args.shot_ticks,'hold_ms':hold_ms,
+          'shot_interval_ticks':args.shot_ticks,'hold_ms':hold_ms,'post_release_ms':args.post_release_ms,
           'hit_events':hit_events,'fall_tick':fall_tick,'timeline':render_log,
           'projectile_hashes':{k:hashlib.sha256(p.read_bytes()).hexdigest() for k,p in projectile_paths.items()},
           'palette_colors_exact':True,'gif_duration_ms':sum(durations)}

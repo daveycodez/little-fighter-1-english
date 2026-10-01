@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
 Build script: generates MODS.COM (MAIN menu music + all fight-track dispatch),
-SYS/FUSION.BGM and SYS/TRANS.BGM (raw cooked streams), and patches PLAY.COM.
+generated music streams, and runtime overlays. Original game executables
+and PLAY.COM are never modified by this build.
 
 MODS is a single TSR with one INT 08 handler.  At init it allocates memory
 (AH=48h) and reads both fight streams from .BGM files.  active_track selects
 which stream the ISR processes (0=MAIN in CS, 1=FUSION, 2=TRANSFORM in alloc'd
-segments).  track_generation forces a rewind on switch.  When bgm=0, PIT only.
+segments).  track_generation forces a rewind on switch.  Runtime overlays
+remain resident when bgm=0; the unused MAIN stream is released.
 
 Developer tool only — end users never run this.
 """
@@ -168,7 +170,7 @@ class Asm16:
                 self.buf[off] = d & 0xFF
             elif kind == 'rel16':
                 d = t - (self.base + off + 2)
-                assert -32768 <= d <= 32767, f"rel16 overflow: {label} disp={d}"
+                assert -65535 <= d <= 65535, f"rel16 overflow: {label} disp={d}"  # IP wraps within the COM segment
                 self.buf[off] = d & 0xFF
                 self.buf[off + 1] = (d >> 8) & 0xFF
 
@@ -522,6 +524,11 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.ret()
 
     a.label('music_switch_main')
+    a.db(0x0E, 0x1F)
+    a.mov_mem16_imm('wait_restore_psp', 0)
+    a.mov_al_mem('flag_bgm')
+    a.cmp_al_imm(1)
+    a.jne('music_main_done')
     a.call('all_notes_off_res')
     a.db(0x0E, 0x1F)            # push cs; pop ds
     a.db(0x8C, 0xC8)            # MOV AX, CS
@@ -533,6 +540,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_mem16_imm('wait_restore_psp', 0)
     # Reload fight_seg with a fresh random track for next fight
     a.call('reload_fight_bgm')
+    a.label('music_main_done')
     a.db(0xC3)                   # ret
 
     a.label('music_switch_fight')
@@ -798,8 +806,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.jmp_near('dos_wait_check')
     a.label('dos_not_wait')
     a.label('dos_chain')
-    a.db(0x2E, 0xFF, 0x2E)      # jmp far [CS:old_21_off]
-    a._fixup('abs16', 'old_21_off'); a._word(0)
+    a.jmp_near('runtime_dispatch')
 
     a.label('dos_exec_check')
     a.cmp_al_imm(0)
@@ -981,6 +988,11 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
         0xCF,                                   # IRET
     )
 
+    from mods.firzen.build_runtime import build_fragment
+    runtime_blob, runtime_exports = build_fragment(a.pos, a.labels['old_21_off'])
+    a.db(runtime_blob)
+    a.labels.update(runtime_exports)
+
     # -- Cooked MIDI (resident): MAIN only (fight streams loaded into allocated memory)
     a.label('event_data')
     a.db(cooked_main)
@@ -1002,7 +1014,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
 
     a.mov_rr16('bx', 'ax')
     a.mov_r8_imm('ah', 0x3F)
-    a.mov_r16_imm('cx', 1024)
+    a.mov_r16_imm('cx', 4096)
     a.mov_r16_label('dx', 'read_buffer')
     a.int21()
     a.jc('close_cfg')
@@ -1286,6 +1298,16 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
 
     a.label('gs_bgm_done')
 
+    a.mov_r16_label('si', 'str_firzen')
+    a.call('search')
+    a.mov_mem_al('runtime_firzen')
+    for source, target in [('flag_bal_julian', 'runtime_balanced'),
+                           ('flag_free_supers', 'runtime_free_supers'),
+                           ('flag_cheap_supers', 'runtime_cheap_supers'),
+                           ('flag_easy_supers', 'runtime_easy_supers')]:
+        a.mov_al_mem(source)
+        a.mov_mem_al(target)
+
     # -- compute spawn rate value --
     a.mov_r16_imm('ax', 0x012C)        # default = 300
     a.mov_mem_ax('rate_value')
@@ -1302,9 +1324,11 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_mem_ax('rate_value')
     a.label('no_sw3')
 
-    # -- patch START.EXE --
+    # -- queue START.EXE memory overlays --
+    a.mov_r8_imm('al', 1)
+    a.mov_mem_al('runtime_patch_target')
     a.mov_r8_imm('ah', 0x3D)
-    a.mov_r8_imm('al', 0x02)
+    a.mov_r8_imm('al', 0x00)
     a.mov_r16_label('dx', 'fn_start')
     a.int21()
     a.jc('patch_fight')
@@ -1334,8 +1358,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
 
     # -- patch FIGHT.EXE --
     a.label('patch_fight')
+    a.mov_r8_imm('al', 2)
+    a.mov_mem_al('runtime_patch_target')
     a.mov_r8_imm('ah', 0x3D)
-    a.mov_r8_imm('al', 0x02)
+    a.mov_r8_imm('al', 0x00)
     a.mov_r16_label('dx', 'fn_fight')
     a.int21()
     a.jc_far('exit')
@@ -1711,6 +1737,8 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     #  TSR / PIT decision
     # =================================================================
 
+    a.jmp_near('tsr_init')  # All mod overlays now reside in memory.
+
     # Need TSR for music playback (bgm=1) or gore INT 60h handler (gore=1)
     a.mov_al_mem('flag_bgm')
     a.cmp_al_imm(1)
@@ -1797,6 +1825,10 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.mov_r16_label('dx', 'dos_isr')
     a.int21()
 
+    a.mov_r16_imm('ax', 0x2565)
+    a.mov_r16_label('dx', 'runtime_irq65')
+    a.int21()
+
     # Reprogram PIT if game_speed != 1.0
     a.mov_ax_mem('pit_divisor_val')
     a.db(0x85, 0xC0)            # test ax, ax
@@ -1826,7 +1858,12 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     # Go TSR — keep everything up to end_resident
     end_addr = a.labels['end_resident']
     tsr_paras = (end_addr + 0x0F) >> 4
+    a.mov_r16_imm('dx', (a.labels['event_data'] + 15) >> 4)
+    a.mov_al_mem('flag_bgm')
+    a.cmp_al_imm(1)
+    a.jne('tsr_size_ready')
     a.mov_r16_imm('dx', tsr_paras)
+    a.label('tsr_size_ready')
     a.mov_r16_imm('ax', 0x3100)
     a.int21()
 
@@ -1841,79 +1878,17 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
 
     # search: SI = null-terminated string → AL = 1 if found in read_buffer
     a.label('search')
-    a.push('si');  a.push('di');  a.push('bx');  a.push('cx');  a.push('dx')
-
-    a.xor_r16('dx')
-    a.mov_rr16('bx', 'si')
-    a.label('s_len')
-    a.cmp_byte_bx_imm(0)
-    a.je('s_len_done')
-    a.inc16('dx')
-    a.inc16('bx')
-    a.jmp('s_len')
-
-    a.label('s_len_done')
+    a.push('cx'); a.push('di')
     a.mov_ax_mem('bytes_read')
-    a.sub_ax_dx()
-    a.jl('s_nf')
-    a.inc16('ax')
-    a.mov_rr16('cx', 'ax')
-    a.mov_r16_label('di', 'read_buffer')
-
-    a.label('s_try')
-    a.push('cx');  a.push('si');  a.push('di')
-    a.mov_rr16('cx', 'dx')
-
-    a.label('s_cmp')
-    a.jcxz('s_match')
-    a.mov_al_si_ind()
-    a.cmp_al_di_ind()
-    a.jne('s_miss')
-    a.inc16('si');  a.inc16('di');  a.dec16('cx')
-    a.jmp('s_cmp')
-
-    a.label('s_match')
-    a.pop('di');  a.pop('si');  a.pop('cx')
-    a.jmp('s_found')
-
-    a.label('s_miss')
-    a.pop('di');  a.pop('si');  a.pop('cx')
-    a.inc16('di')
-    a.loop('s_try')
-
-    a.label('s_nf')
-    a.pop('dx');  a.pop('cx');  a.pop('bx');  a.pop('di');  a.pop('si')
-    a.xor_r8('al')
-    a.ret()
-
-    a.label('s_found')
-    a.pop('dx');  a.pop('cx');  a.pop('bx');  a.pop('di');  a.pop('si')
-    a.mov_r8_imm('al', 1)
+    a.mov_rr16('cx','ax')
+    a.mov_r16_label('di','read_buffer')
+    a.call('runtime_cfg_search')
+    a.pop('di'); a.pop('cx')
     a.ret()
 
     # apply_patch: AL=flag CX:DX=offset SI=on DI=off BL=size
     a.label('apply_patch')
-    a.push('ax');  a.push('bx');  a.push('si');  a.push('di')
-    a.push('ax');  a.push('bx')
-
-    a.mov_bx_mem('cur_handle')
-    a.mov_r16_imm('ax', 0x4200)
-    a.int21()
-
-    a.pop('bx');  a.pop('ax')
-    a.cmp_al_imm(1)
-    a.je('ap_on')
-    a.mov_rr16('si', 'di')
-    a.label('ap_on')
-    a.mov_rr16('dx', 'si')
-    a.xor_r8('ch')
-    a.mov_rr8('cl', 'bl')
-    a.mov_bx_mem('cur_handle')
-    a.mov_r8_imm('ah', 0x40)
-    a.int21()
-
-    a.pop('di');  a.pop('si');  a.pop('bx');  a.pop('ax')
-    a.ret()
+    a.jmp_near('runtime_queue')
 
     # =================================================================
     #  Data (non-resident)
@@ -1923,6 +1898,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.label('fn_start');     a.db("SYS\\START.EXE\x00")
     a.label('fn_fight');     a.db("SYS\\FIGHT.EXE\x00")
     # (fn_*_bgm moved to resident section for reload_fight_bgm)
+    a.label('str_firzen'); a.db("firzen=1\x00")
     a.label('str_unlock_julian'); a.db("unlock_julian=1\x00")
     a.label('str_free_run'); a.db("free_run=1\x00")
     a.label('str_free_jump');a.db("free_jump=1\x00")
@@ -2295,6 +2271,7 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
          0x59, 0x59, 0x5F, 0x5E, 0x5D)
 
     a.label('read_buffer')
+    a.db(bytes(4096))
 
     a.resolve()
 
@@ -2311,43 +2288,6 @@ def build_mods_com(cooked_main, fus_size, trn_size, fut_size, cat_size):
     a.buf[resize_sp_off + 1] = (safe_sp >> 8) & 0xFF
 
     return bytes(a.buf)
-
-
-# ---------------------------------------------------------------------------
-# Patch PLAY.COM to run MODS before the game
-# ---------------------------------------------------------------------------
-
-def patch_play_com():
-    path = os.path.join(GAME_DIR, "PLAY.COM")
-    data = bytearray(open(path, "rb").read())
-
-    if len(data) == 1152 and data[0x305] == 0x70 and data[0x306] == 0x05:
-        print("  PLAY.COM already patched")
-        return True
-
-    if len(data) != 1131:
-        print(f"  PLAY.COM unexpected size ({len(data)}), skipping")
-        return False
-
-    if data[0x305] != 0x91 or data[0x306] != 0x04:
-        print(f"  PLAY.COM entry point unexpected ({data[0x305]:02x}{data[0x306]:02x}), skipping")
-        return False
-
-    patch = bytearray()
-    patch += b"MODS\x00"
-    patch += bytes([0x8D, 0xB6, 0x66, 0x01])   # LEA SI, [BP+0166h]
-    patch += bytes([0x8D, 0xBE, 0x3D, 0x00])   # LEA DI, [BP+003Dh]
-    patch += bytes([0xB8, 0x23, 0x02])          # MOV AX, 0223h
-    patch += bytes([0xFF, 0xD0])                # CALL AX
-    patch += bytes([0xE9, 0x11, 0xFF])          # JMP 0491h
-    assert len(patch) == 21
-
-    data.extend(patch)
-    data[0x305] = 0x70
-    data[0x306] = 0x05
-
-    open(path, "wb").write(data)
-    return True
 
 
 # ---------------------------------------------------------------------------
@@ -2459,11 +2399,6 @@ if __name__ == "__main__":
     open(os.path.join(GAME_DIR, "SYS", "CATSTRPH.BGM"), "wb").write(cooked_catastrophe)
     print(f"  Written {len(cooked_catastrophe)} bytes")
 
-    print("Patching PLAY.COM...")
-    if patch_play_com():
-        print("  Done")
-    else:
-        print("  FAILED — see above")
-        sys.exit(1)
-
+    # PLAY.COM is already wired to invoke MODS. Building runtime mods must
+    # never modify the launcher or either original game executable.
     print("\nAll done. Users just edit mods.cfg and launch the game.")

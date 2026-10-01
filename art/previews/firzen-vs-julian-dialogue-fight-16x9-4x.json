@@ -1,0 +1,372 @@
+{
+  "scope": "scripted research mockup; no game executable or data modified",
+  "native_canvas": [
+    320,
+    180
+  ],
+  "preview_canvas": [
+    1280,
+    720
+  ],
+  "fps": 18.2,
+  "scale": 4,
+  "hair": [
+    98,
+    99
+  ],
+  "shirt": [
+    66,
+    77
+  ],
+  "pants": [
+    11,
+    10
+  ],
+  "winner": "Firzen",
+  "finisher": "Arctic Volcano",
+  "duration_ms": 48600,
+  "scenes": [
+    {
+      "name": "opening",
+      "start_ms": 0,
+      "duration_ms": 2600
+    },
+    {
+      "name": "answer",
+      "start_ms": 2600,
+      "duration_ms": 2100
+    },
+    {
+      "name": "walk into range",
+      "start_ms": 4700,
+      "duration_ms": 1500
+    },
+    {
+      "name": "melee exchange",
+      "start_ms": 6200,
+      "duration_ms": 1800
+    },
+    {
+      "name": "separate",
+      "start_ms": 8000,
+      "duration_ms": 1200
+    },
+    {
+      "name": "skull threat",
+      "start_ms": 9200,
+      "duration_ms": 1800
+    },
+    {
+      "name": "skulls and jumps",
+      "start_ms": 11000,
+      "duration_ms": 3300
+    },
+    {
+      "name": "cannon counter",
+      "start_ms": 14300,
+      "duration_ms": 4900
+    },
+    {
+      "name": "julian gets up",
+      "start_ms": 19200,
+      "duration_ms": 1900
+    },
+    {
+      "name": "charged blast",
+      "start_ms": 21100,
+      "duration_ms": 3000
+    },
+    {
+      "name": "jump back in",
+      "start_ms": 24100,
+      "duration_ms": 2200
+    },
+    {
+      "name": "elemental chase",
+      "start_ms": 26300,
+      "duration_ms": 4500
+    },
+    {
+      "name": "julian rises again",
+      "start_ms": 30800,
+      "duration_ms": 1700
+    },
+    {
+      "name": "big bang",
+      "start_ms": 32500,
+      "duration_ms": 4000
+    },
+    {
+      "name": "last stand",
+      "start_ms": 36500,
+      "duration_ms": 2000
+    },
+    {
+      "name": "last threat",
+      "start_ms": 38500,
+      "duration_ms": 1800
+    },
+    {
+      "name": "final answer",
+      "start_ms": 40300,
+      "duration_ms": 1600
+    },
+    {
+      "name": "arctic volcano finish",
+      "start_ms": 41900,
+      "duration_ms": 4000
+    },
+    {
+      "name": "firzen wins",
+      "start_ms": 45900,
+      "duration_ms": 2700
+    }
+  ],
+  "dialogue": [
+    {
+      "scene": "opening",
+      "speaker": "julian",
+      "start_ms": 0,
+      "end_ms": 2450,
+      "text": "Two elements.\nStill one loser."
+    },
+    {
+      "scene": "answer",
+      "speaker": "firzen",
+      "start_ms": 2600,
+      "end_ms": 4600,
+      "text": "Then lose\nto both."
+    },
+    {
+      "scene": "skull threat",
+      "speaker": "julian",
+      "start_ms": 9200,
+      "end_ms": 10950,
+      "text": "Meet the family."
+    },
+    {
+      "scene": "skulls and jumps",
+      "speaker": "firzen",
+      "start_ms": 12650,
+      "end_ms": 14150,
+      "text": "All skull.\nNo brains."
+    },
+    {
+      "scene": "cannon counter",
+      "speaker": "firzen",
+      "start_ms": 14800,
+      "end_ms": 16750,
+      "text": "Smile for\nthe flash."
+    },
+    {
+      "scene": "julian gets up",
+      "speaker": "julian",
+      "start_ms": 20150,
+      "end_ms": 21000,
+      "text": "Cheap tricks."
+    },
+    {
+      "scene": "charged blast",
+      "speaker": "julian",
+      "start_ms": 21250,
+      "end_ms": 23100,
+      "text": "THIS is power."
+    },
+    {
+      "scene": "jump back in",
+      "speaker": "firzen",
+      "start_ms": 24500,
+      "end_ms": 26200,
+      "text": "Could use\na cool-down."
+    },
+    {
+      "scene": "elemental chase",
+      "speaker": "firzen",
+      "start_ms": 26450,
+      "end_ms": 28150,
+      "text": "Hot. Cold.\nTake your pick."
+    },
+    {
+      "scene": "julian rises again",
+      "speaker": "julian",
+      "start_ms": 31750,
+      "end_ms": 32480,
+      "text": "Enough!"
+    },
+    {
+      "scene": "big bang",
+      "speaker": "julian",
+      "start_ms": 33550,
+      "end_ms": 34850,
+      "text": "KNEEL!"
+    },
+    {
+      "scene": "big bang",
+      "speaker": "firzen",
+      "start_ms": 35250,
+      "end_ms": 36470,
+      "text": "Okay. That\none hurt."
+    },
+    {
+      "scene": "last threat",
+      "speaker": "julian",
+      "start_ms": 38500,
+      "end_ms": 40230,
+      "text": "Stay down!"
+    },
+    {
+      "scene": "final answer",
+      "speaker": "firzen",
+      "start_ms": 40300,
+      "end_ms": 41830,
+      "text": "First, chill."
+    },
+    {
+      "scene": "arctic volcano finish",
+      "speaker": "julian",
+      "start_ms": 42500,
+      "end_ms": 43150,
+      "text": "W-wait..."
+    },
+    {
+      "scene": "arctic volcano finish",
+      "speaker": "firzen",
+      "start_ms": 43200,
+      "end_ms": 44250,
+      "text": "Now thaw."
+    },
+    {
+      "scene": "firzen wins",
+      "speaker": "firzen",
+      "start_ms": 45900,
+      "end_ms": 48500,
+      "text": "Two elements.\nOne winner."
+    }
+  ],
+  "events": [
+    {
+      "special": "julian_skulls",
+      "time_ms": 11000
+    },
+    {
+      "special": "firzen_cannon",
+      "time_ms": 14300
+    },
+    {
+      "special": "julian_charge",
+      "time_ms": 21100
+    },
+    {
+      "special": "firzen_disaster",
+      "time_ms": 26300
+    },
+    {
+      "event": "elemental_hit",
+      "kind": "fire",
+      "time_ms": 27509
+    },
+    {
+      "event": "elemental_hit",
+      "kind": "ice",
+      "time_ms": 27838
+    },
+    {
+      "event": "elemental_hit",
+      "kind": "fire",
+      "time_ms": 28168
+    },
+    {
+      "event": "elemental_hit",
+      "kind": "ice",
+      "time_ms": 28498
+    },
+    {
+      "special": "julian_big_bang",
+      "time_ms": 32500
+    },
+    {
+      "special": "firzen_arctic_volcano",
+      "time_ms": 41900
+    }
+  ],
+  "specials": {
+    "firzen": [
+      "arctic_volcano",
+      "cannon",
+      "overwhelming_disaster"
+    ],
+    "julian": [
+      "big_bang",
+      "charge",
+      "skulls"
+    ]
+  },
+  "used_poses": {
+    "firzen": [
+      1,
+      2,
+      3,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      35,
+      43,
+      93,
+      111,
+      112,
+      113,
+      114
+    ],
+    "julian": [
+      1,
+      2,
+      3,
+      6,
+      7,
+      8,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      24,
+      25,
+      36,
+      42,
+      43,
+      52,
+      53,
+      54,
+      55,
+      56
+    ]
+  },
+  "max_jump_height": {
+    "firzen": 30.968517087308296,
+    "julian": 23.998711910799823
+  },
+  "shadow_source": "ACT1.GRH frame49, original9x1 mask",
+  "protected_hashes": {
+    "/Users/david/Developer/little-fighter-1-english/SYS/FIGHT.EXE": "d62732d7a4f56282f007477a15d2d34c96c45f94202843607628f48cf530ff54",
+    "/Users/david/Developer/little-fighter-1-english/SYS/START.EXE": "0fb5c2eb7fbf33f8d38b9e5b0b1cf880a4c185e1a3a8f007a433c04a5ee8332e",
+    "/Users/david/Developer/little-fighter-1-english/SYS/DATA.DAT": "7e01bd8187e070d4ab105cfd128268cbf3cc98521b48a5b9f17802bc41bd87cd",
+    "/Users/david/Developer/little-fighter-1-english/SYS/PAL": "00a871bdbd9151647bea5e43e40b6fbf0eb7375c1590040d53bca7490fa91479",
+    "/Users/david/Developer/little-fighter-1-english/SYS/ACT1.GRH": "141e0f9fe082e984a94f7ec72350f3327aa2ffd2d5cef71d53a0b4b73fabbb0e",
+    "/Users/david/Developer/little-fighter-1-english/SYS/ACT2.GRH": "046b08c3ff53dc4bf074a774e446f3b75d85f8214349e84c12dda40d79e8f2a0",
+    "/Users/david/Developer/little-fighter-1-english/SYS/HEAD.GRH": "cb17a432c398da554b900c82411cf674d5a3b02ad139d08200fa040cd653f2f7",
+    "/Users/david/Developer/little-fighter-1-english/SYS/WEAPON.GRH": "aadb8002521e4a087fd15aa08307f50b385b12f1fd2dcf2ce23cbaf8ec6567d5"
+  }
+}

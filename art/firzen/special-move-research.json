@@ -1,0 +1,101 @@
+{
+  "scope": "Research only; game executables and DATA.DAT untouched",
+  "activation_requirement": "Firzen enabled through mods.cfg; any future executable patches apply to loaded memory, not executable files on disk.",
+  "existing_loader": "build_mods_com.py currently opens SYS/START.EXE and SYS/FIGHT.EXE read/write and applies file-byte patches. Firzen needs a separate runtime-memory hook path.",
+  "data_location": "Character and projectile definitions are external SYS/DATA.DAT; images in SYS/*.GRH; chase and collision logic in SYS/FIGHT.EXE.",
+  "requested_disaster": {
+    "count": 4,
+    "order": [
+      "fire",
+      "ice",
+      "fire",
+      "ice"
+    ],
+    "fire_type": 16,
+    "ice_type": 18,
+    "fire_frames": [
+      41,
+      42
+    ],
+    "ice_frames": [
+      49,
+      50
+    ],
+    "on_hit": [
+      "burn",
+      "freeze",
+      "burn",
+      "freeze"
+    ],
+    "launch_lanes": [
+      "top",
+      "bottom",
+      "top",
+      "bottom"
+    ],
+    "one_projectile_per_emission": true,
+    "after_burn_or_freeze": "fall to ground"
+  },
+  "skull_chase": {
+    "type": 26,
+    "gate": "FIGHT.EXE file 0xA47C..0xA4C6",
+    "target_selection": "Random active enemy character, different team; slots0..7 at file0xA6E5..0xA774",
+    "target_lifetime": "Keep selected target; reacquire if it is no longer active",
+    "steering": "file0xA774..0xA8DB: X acceleration2, clamp[-17,17]; lane-depth acceleration1, clamp[-3,3]",
+    "chase_timer": "Positive DS:[slot*0x34+0x340E], decremented at file0xA4C2; falls back to ordinary movement after expiry"
+  },
+  "elemental_collision": {
+    "fire": "Type16 adds +2000 to its collision modifier at file0xAA5F..0xAA6B",
+    "ice": "Mode6 enters frozen status and pose42 at file0x8374..0x83C2",
+    "implementation_implication": "Preserve original fire/ice collision identities while adding Firzen-specific tracking; merely replacing skull images would not preserve elemental effects."
+  },
+  "requested_arctic_volcano": {
+    "sequence": [
+      "Freeze cyclone spin",
+      "Firen explosion"
+    ],
+    "spin_poses": [
+      111,
+      112,
+      113,
+      114
+    ],
+    "explosion_pose": 93,
+    "explosion_crops": [
+      [
+        163,
+        81,
+        35,
+        29
+      ],
+      [
+        199,
+        81,
+        35,
+        29
+      ],
+      [
+        235,
+        81,
+        35,
+        29
+      ]
+    ],
+    "gap_ticks": 0,
+    "spin_collision": "freeze on contact in place",
+    "pulls_targets": false,
+    "explosion_collision": "ignite and knock back frozen targets"
+  },
+  "remaining_research": [
+    "Initial skull chase timer and original cast repetition cadence",
+    "Runtime load/entry hook before selection for a new character",
+    "Final gameplay damage, costs, hit limits and immunities"
+  ],
+  "mockup": "art/previews/firzen-all-three-specials-green-98-99-v4-16x9-4x.gif",
+  "palette": "Original fixed palette only; no custom colors",
+  "binary_sha256": "d62732d7a4f56282f007477a15d2d34c96c45f94202843607628f48cf530ff54",
+  "hair_palette_pair": [
+    98,
+    99
+  ]
+}

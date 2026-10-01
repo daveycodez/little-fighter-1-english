@@ -1,0 +1,143 @@
+{
+  "scope": "Research mockup only; no game executables or data patched",
+  "canvas_native": [
+    320,
+    180
+  ],
+  "canvas_preview": [
+    1280,
+    720
+  ],
+  "scale": 4,
+  "fps": 18.2,
+  "hair_pair": [
+    98,
+    99
+  ],
+  "shirt": [
+    66,
+    77
+  ],
+  "trousers": [
+    11,
+    10
+  ],
+  "palette_source": "SYS/PAL fixed1..150; no custom colors",
+  "sections": {
+    "cannon": {
+      "speed_px_sec": 100,
+      "shot_interval_ticks": 3,
+      "hold_ms": 2000,
+      "duration_ms": 5130
+    },
+    "disaster": {
+      "order": [
+        "fire",
+        "ice",
+        "fire",
+        "ice"
+      ],
+      "hit_effects": [
+        "burn",
+        "freeze",
+        "burn",
+        "freeze"
+      ],
+      "frames": 119,
+      "duration_ms": 6500,
+      "steering": "Julian-style enemy targeting, X acceleration2/clamp17, depth acceleration1/clamp3; motion scaled for this mockup"
+    },
+    "arctic_volcano": {
+      "spin_frames": [
+        111,
+        112,
+        113,
+        114
+      ],
+      "spin_ticks": 24,
+      "explosion_pose": 93,
+      "explosion_crops": [
+        [
+          163,
+          81,
+          35,
+          29
+        ],
+        [
+          199,
+          81,
+          35,
+          29
+        ],
+        [
+          235,
+          81,
+          35,
+          29
+        ]
+      ],
+      "gap_ticks": 0,
+      "frames": 79,
+      "duration_ms": 4300
+    }
+  },
+  "events": [
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 6,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 9,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 12,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 15,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 19,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 23,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 24,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 29,
+      "kind": "ice",
+      "target": "woody"
+    }
+  ],
+  "duration_ms": 15930
+}

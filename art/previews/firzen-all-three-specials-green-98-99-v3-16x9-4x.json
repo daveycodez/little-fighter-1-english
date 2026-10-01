@@ -1,0 +1,202 @@
+{
+  "scope": "Research mockup only; no game executables or data patched",
+  "canvas_native": [
+    320,
+    180
+  ],
+  "canvas_preview": [
+    1280,
+    720
+  ],
+  "scale": 4,
+  "fps": 18.2,
+  "hair_pair": [
+    98,
+    99
+  ],
+  "shirt": [
+    66,
+    77
+  ],
+  "trousers": [
+    11,
+    10
+  ],
+  "palette_source": "SYS/PAL fixed1..150; no custom colors",
+  "sections": {
+    "cannon": {
+      "speed_px_sec": 100,
+      "shot_interval_ticks": 3,
+      "hold_ms": 2000,
+      "post_release_ms": 2300,
+      "extra_travel_ms": 500,
+      "final_projectiles_offscreen": true,
+      "duration_ms": 5630
+    },
+    "disaster": {
+      "order": [
+        "fire",
+        "ice",
+        "fire",
+        "ice"
+      ],
+      "launch_lanes": [
+        "top",
+        "bottom",
+        "top",
+        "bottom"
+      ],
+      "spawn_ticks": [
+        6,
+        12,
+        18,
+        24
+      ],
+      "one_projectile_per_emission": true,
+      "recovery_pose": 2,
+      "recovery_behavior": "idle; no attack frames",
+      "hit_effects": [
+        "burn",
+        "freeze",
+        "burn",
+        "freeze"
+      ],
+      "frames": 119,
+      "duration_ms": 6500,
+      "steering": "Julian-style enemy targeting, X acceleration2/clamp17, depth acceleration1/clamp3; motion scaled for this mockup"
+    },
+    "arctic_volcano": {
+      "spin_frames": [
+        111,
+        112,
+        113,
+        114
+      ],
+      "spin_ticks": 24,
+      "explosion_pose": 93,
+      "explosion_crops": [
+        [
+          163,
+          81,
+          35,
+          29
+        ],
+        [
+          199,
+          81,
+          35,
+          29
+        ],
+        [
+          235,
+          81,
+          35,
+          29
+        ]
+      ],
+      "gap_ticks": 0,
+      "spin_effect": "freeze on contact",
+      "pulls_targets": false,
+      "explosion_effect": "ignite and knock back frozen targets",
+      "frames": 79,
+      "duration_ms": 4300
+    }
+  },
+  "events": [
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 6,
+      "kind": "fire",
+      "lane": "top",
+      "origin_y": 132.0,
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 12,
+      "kind": "ice",
+      "lane": "bottom",
+      "origin_y": 144.0,
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 18,
+      "kind": "fire",
+      "lane": "top",
+      "origin_y": 132.0,
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 19,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 24,
+      "kind": "ice",
+      "lane": "bottom",
+      "origin_y": 144.0,
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 26,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 30,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 38,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "freeze",
+      "tick": 8,
+      "target": "davis",
+      "x": 126
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "freeze",
+      "tick": 8,
+      "target": "woody",
+      "x": 166
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "burn_knockback",
+      "tick": 32,
+      "target": "davis",
+      "was_frozen": true,
+      "x": 126
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "burn_knockback",
+      "tick": 32,
+      "target": "woody",
+      "was_frozen": true,
+      "x": 166
+    }
+  ],
+  "duration_ms": 16430
+}

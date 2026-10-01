@@ -1,0 +1,53 @@
+{
+  "native_size": [
+    50,
+    50
+  ],
+  "translation_up_pixels": 3,
+  "original_jaw_face_hair_preserved": true,
+  "neck_new_rows": [
+    47,
+    49
+  ],
+  "neck_tendon_line_bounds": [
+    33,
+    42,
+    37,
+    50
+  ],
+  "old_rows_changed_only_for_requested_neck_line": [
+    [
+      36,
+      42
+    ],
+    [
+      35,
+      43
+    ],
+    [
+      35,
+      44
+    ],
+    [
+      35,
+      45
+    ],
+    [
+      34,
+      46
+    ]
+  ],
+  "palette_indices": [
+    7,
+    10,
+    14,
+    15,
+    31,
+    34,
+    81,
+    82,
+    83,
+    97,
+    98
+  ]
+}

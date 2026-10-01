@@ -1,0 +1,236 @@
+{
+  "source": "/Users/david/Developer/little-fighter-1-english/art/firzen/portrait-neck-redraw/before.PNG",
+  "target": "/Users/david/Developer/little-fighter-1-english/art/firzen/portrait-neck-redraw/firzen-portrait.png",
+  "native_size": [
+    50,
+    50
+  ],
+  "existing_translation_preserved": [
+    0,
+    -5
+  ],
+  "further_resizing": false,
+  "neck_widened_left_pixels": 3,
+  "front_neck_black_coordinates": [
+    [
+      21,
+      45
+    ],
+    [
+      21,
+      46
+    ],
+    [
+      22,
+      47
+    ],
+    [
+      22,
+      48
+    ],
+    [
+      23,
+      49
+    ]
+  ],
+  "front_neck_connected_to_chin": true,
+  "front_neck_connected_to_bottom": true,
+  "neck_width_including_contours_rows_45_to_49": [
+    25,
+    25,
+    24,
+    24,
+    23
+  ],
+  "V_tendon_pixels_unchanged": true,
+  "mouth_black_coordinates": [
+    [
+      17,
+      34
+    ],
+    [
+      18,
+      34
+    ],
+    [
+      19,
+      34
+    ],
+    [
+      20,
+      34
+    ],
+    [
+      21,
+      34
+    ],
+    [
+      22,
+      34
+    ],
+    [
+      23,
+      34
+    ],
+    [
+      24,
+      34
+    ]
+  ],
+  "mouth_black_pixel_count": 8,
+  "mouth_previous_black_pixel_count": 0,
+  "nose_restored_black_coordinates": [
+    [
+      15,
+      27
+    ],
+    [
+      13,
+      29
+    ],
+    [
+      14,
+      30
+    ],
+    [
+      14,
+      31
+    ]
+  ],
+  "nose_black_pixel_count_after": 8,
+  "nose_black_pixel_count_before": 4,
+  "changed_pixels_count": 32,
+  "changed_coordinates": [
+    [
+      15,
+      27
+    ],
+    [
+      13,
+      29
+    ],
+    [
+      14,
+      30
+    ],
+    [
+      14,
+      31
+    ],
+    [
+      17,
+      34
+    ],
+    [
+      18,
+      34
+    ],
+    [
+      19,
+      34
+    ],
+    [
+      20,
+      34
+    ],
+    [
+      21,
+      34
+    ],
+    [
+      22,
+      34
+    ],
+    [
+      23,
+      34
+    ],
+    [
+      24,
+      34
+    ],
+    [
+      21,
+      45
+    ],
+    [
+      22,
+      45
+    ],
+    [
+      23,
+      45
+    ],
+    [
+      24,
+      45
+    ],
+    [
+      21,
+      46
+    ],
+    [
+      22,
+      46
+    ],
+    [
+      23,
+      46
+    ],
+    [
+      24,
+      46
+    ],
+    [
+      22,
+      47
+    ],
+    [
+      23,
+      47
+    ],
+    [
+      24,
+      47
+    ],
+    [
+      25,
+      47
+    ],
+    [
+      22,
+      48
+    ],
+    [
+      23,
+      48
+    ],
+    [
+      24,
+      48
+    ],
+    [
+      25,
+      48
+    ],
+    [
+      23,
+      49
+    ],
+    [
+      24,
+      49
+    ],
+    [
+      25,
+      49
+    ],
+    [
+      26,
+      49
+    ]
+  ],
+  "exact_SYS_PAL": true,
+  "all_other_pixels_unchanged": true,
+  "preview": "/Users/david/Developer/little-fighter-1-english/art/firzen/portrait-neck-redraw/firzen-portrait-4x.png"
+}

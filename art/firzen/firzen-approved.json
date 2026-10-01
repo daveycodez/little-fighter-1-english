@@ -1,0 +1,93 @@
+{
+  "character": "Firzen",
+  "mod_key": "firzen",
+  "status": "User-approved appearance",
+  "approval": "that is firzen.",
+  "body_palette": {
+    "skin": [
+      83,
+      81
+    ],
+    "shirt": [
+      66,
+      77
+    ],
+    "trousers": [
+      11,
+      10
+    ],
+    "baked_hair": 97
+  },
+  "outfit": "Warm gold shirt with amber shadow; charcoal trousers",
+  "assets": {
+    "head": "art/firzen/firzen-head-gameplay-v51.png",
+    "cannon_leading_shot": "art/firzen/firzen-ball-v2.png",
+    "cannon_continuation": "art/firzen/firzen-cannon-segment-v4.png",
+    "approved_preview": "art/previews/firzen-cannon-vs-julian-warm-gold-charcoal-16x9-4x.gif",
+    "latest_mockup": "art/previews/firzen-all-three-specials-green-98-99-v4-16x9-4x.gif",
+    "latest_fight_mockup": "art/previews/firzen-vs-julian-dialogue-fight-16x9-4x.gif",
+    "portrait": "art/firzen/firzen-portrait.png"
+  },
+  "sha256": {
+    "head": "50c6408853a4eaf5e0cb4bb894f16847e040c295647b484e4f17b9066bfb0e7c",
+    "cannon_leading_shot": "838d9c92eea42fbd036739df11124d45ccc871c1d1fcc4de1e1eb773ca30c4db",
+    "cannon_continuation": "fc7558d1bb9935dd2438a3ed7bda37cf775697d290548b914ce84ea7fb747ded",
+    "approved_preview": "caef88f6070d58f402886334f8c493f43e49f87598a37e5bcdf8ca63c7b16c88",
+    "latest_mockup": "4c4ed5b80c06e858b292c49597a81b6c4cfe43ee6f94ae54b1db64bcd92e641a",
+    "latest_fight_mockup": "d5b9e00eb4e66cc5c10bb8cc99cd48598431e511074496f6d7123c8a563e04e4",
+    "portrait": "0752855eb17e01e162e77a89506fae46ddac84554630d1a5c7f2bd5ca3d5dddb"
+  },
+  "cannon_mockup": {
+    "projectile_speed_native_pixels_per_second": 100,
+    "shot_interval_game_ticks": 3,
+    "fps": 18.2,
+    "hold_seconds": 2,
+    "post_release_ms": 2300,
+    "extra_travel_ms": 500
+  },
+  "palette_source": "SYS/PAL; VGA start index 1; fixed colors only",
+  "note": "Runtime gameplay integration in progress; latest hair pair97/98 approved by user.",
+  "hair_palette_pair": [
+    97,
+    98
+  ],
+  "special_move_designs": {
+    "disaster": {
+      "count": 4,
+      "order": [
+        "fire",
+        "ice",
+        "fire",
+        "ice"
+      ],
+      "launch_lanes": [
+        "top",
+        "bottom",
+        "top",
+        "bottom"
+      ],
+      "one_at_a_time": true,
+      "fire_collision": "burn",
+      "ice_collision": "freeze",
+      "after_burn_or_freeze": "Fall through poses16/17/18 and stay on ground"
+    },
+    "polar_volcano": {
+      "sequence": [
+        "Freeze cyclone spin",
+        "Firen explosion"
+      ],
+      "spin_collision": "freeze in place",
+      "pulls_targets": false,
+      "explosion_collision": "burn and knock back",
+      "gap_ticks": 0,
+      "display_name": "Polar Volcano"
+    }
+  },
+  "portrait_note": "Exact requested source shifted upward5nativepixels, bare neck widened with left outline and preserved V, mouth/nose ink restored; red pupil interiors31/34.",
+  "portrait_background_index": 78,
+  "portrait_background_rgb": [
+    168,
+    120,
+    0
+  ]
+}

@@ -1,0 +1,1650 @@
+{
+  "scope": "Research mockup only; no game executables or data patched",
+  "canvas_native": [
+    320,
+    180
+  ],
+  "canvas_preview": [
+    1280,
+    720
+  ],
+  "scale": 4,
+  "fps": 18.2,
+  "hair_pair": [
+    98,
+    99
+  ],
+  "shirt": [
+    66,
+    77
+  ],
+  "trousers": [
+    11,
+    10
+  ],
+  "palette_source": "SYS/PAL fixed1..150; no custom colors",
+  "sections": {
+    "cannon": {
+      "speed_px_sec": 100,
+      "shot_interval_ticks": 3,
+      "hold_ms": 2000,
+      "post_release_ms": 2300,
+      "extra_travel_ms": 500,
+      "final_projectiles_offscreen": true,
+      "duration_ms": 5630
+    },
+    "disaster": {
+      "order": [
+        "fire",
+        "ice",
+        "fire",
+        "ice"
+      ],
+      "launch_lanes": [
+        "top",
+        "bottom",
+        "top",
+        "bottom"
+      ],
+      "spawn_ticks": [
+        6,
+        12,
+        18,
+        24
+      ],
+      "one_projectile_per_emission": true,
+      "recovery_frames": [
+        16,
+        17,
+        18
+      ],
+      "recovery_behavior": "burn/freeze -> fall -> remain on ground",
+      "reaction_timeline": [
+        {
+          "tick": 0,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 0,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 1,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 1,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 2,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 2,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 3,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 3,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 4,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 4,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 5,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 5,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 6,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 6,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 7,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 7,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 8,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 8,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 9,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 9,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 10,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 10,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 11,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 11,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 12,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 12,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 13,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 13,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 14,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 14,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 15,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 15,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 16,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 16,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 17,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 17,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 18,
+          "target": "davis",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 18,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 19,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 19,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 20,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 20,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 21,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 21,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 22,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 22,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 23,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 23,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 24,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 24,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 25,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 25,
+          "target": "woody",
+          "status": null,
+          "pose": 2
+        },
+        {
+          "tick": 26,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 26,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 27,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 27,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 28,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 28,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 29,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 29,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 30,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 30,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 31,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 31,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 32,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 32,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 33,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 33,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 34,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 34,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 35,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 35,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 36,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 36,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 37,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 37,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 38,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 38,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 39,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 39,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 40,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 40,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 41,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 41,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 42,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 42,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 43,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 43,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 44,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 44,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 45,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 45,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 46,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 46,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 47,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 47,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 48,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 48,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 49,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 49,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 50,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 50,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 51,
+          "target": "davis",
+          "status": "burn",
+          "pose": 36
+        },
+        {
+          "tick": 51,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 52,
+          "target": "davis",
+          "status": "fall",
+          "pose": 16
+        },
+        {
+          "tick": 52,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 53,
+          "target": "davis",
+          "status": "fall",
+          "pose": 16
+        },
+        {
+          "tick": 53,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 54,
+          "target": "davis",
+          "status": "fall",
+          "pose": 16
+        },
+        {
+          "tick": 54,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 55,
+          "target": "davis",
+          "status": "fall",
+          "pose": 17
+        },
+        {
+          "tick": 55,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 56,
+          "target": "davis",
+          "status": "fall",
+          "pose": 17
+        },
+        {
+          "tick": 56,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 57,
+          "target": "davis",
+          "status": "fall",
+          "pose": 17
+        },
+        {
+          "tick": 57,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 58,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 58,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 59,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 59,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 60,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 60,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 61,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 61,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 62,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 62,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 63,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 63,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 64,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 64,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 65,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 65,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 66,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 66,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 67,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 67,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 68,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 68,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 69,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 69,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 70,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 70,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 71,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 71,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 72,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 72,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 73,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 73,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 74,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 74,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 75,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 75,
+          "target": "woody",
+          "status": "freeze",
+          "pose": 42
+        },
+        {
+          "tick": 76,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 76,
+          "target": "woody",
+          "status": "fall",
+          "pose": 16
+        },
+        {
+          "tick": 77,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 77,
+          "target": "woody",
+          "status": "fall",
+          "pose": 16
+        },
+        {
+          "tick": 78,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 78,
+          "target": "woody",
+          "status": "fall",
+          "pose": 16
+        },
+        {
+          "tick": 79,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 79,
+          "target": "woody",
+          "status": "fall",
+          "pose": 17
+        },
+        {
+          "tick": 80,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 80,
+          "target": "woody",
+          "status": "fall",
+          "pose": 17
+        },
+        {
+          "tick": 81,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 81,
+          "target": "woody",
+          "status": "fall",
+          "pose": 17
+        },
+        {
+          "tick": 82,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 82,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 83,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 83,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 84,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 84,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 85,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 85,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 86,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 86,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 87,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 87,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 88,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 88,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 89,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 89,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 90,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 90,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 91,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 91,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 92,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 92,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 93,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 93,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 94,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 94,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 95,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 95,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 96,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 96,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 97,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 97,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 98,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 98,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 99,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 99,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 100,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 100,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 101,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 101,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 102,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 102,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 103,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 103,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 104,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 104,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 105,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 105,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 106,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 106,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 107,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 107,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 108,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 108,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 109,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 109,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 110,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 110,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 111,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 111,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 112,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 112,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 113,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 113,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 114,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 114,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 115,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 115,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 116,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 116,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 117,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 117,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 118,
+          "target": "davis",
+          "status": "down",
+          "pose": 18
+        },
+        {
+          "tick": 118,
+          "target": "woody",
+          "status": "down",
+          "pose": 18
+        }
+      ],
+      "hit_effects": [
+        "burn",
+        "freeze",
+        "burn",
+        "freeze"
+      ],
+      "frames": 119,
+      "duration_ms": 6500,
+      "steering": "Julian-style enemy targeting, X acceleration2/clamp17, depth acceleration1/clamp3; motion scaled for this mockup"
+    },
+    "arctic_volcano": {
+      "spin_frames": [
+        111,
+        112,
+        113,
+        114
+      ],
+      "spin_ticks": 24,
+      "explosion_pose": 93,
+      "explosion_crops": [
+        [
+          163,
+          81,
+          35,
+          29
+        ],
+        [
+          199,
+          81,
+          35,
+          29
+        ],
+        [
+          235,
+          81,
+          35,
+          29
+        ]
+      ],
+      "gap_ticks": 0,
+      "spin_effect": "freeze on contact",
+      "pulls_targets": false,
+      "explosion_effect": "ignite and knock back frozen targets",
+      "frames": 79,
+      "duration_ms": 4300
+    }
+  },
+  "events": [
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 6,
+      "kind": "fire",
+      "lane": "top",
+      "origin_y": 132.0,
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 12,
+      "kind": "ice",
+      "lane": "bottom",
+      "origin_y": 144.0,
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 18,
+      "kind": "fire",
+      "lane": "top",
+      "origin_y": 132.0,
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 19,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "spawn",
+      "tick": 24,
+      "kind": "ice",
+      "lane": "bottom",
+      "origin_y": 144.0,
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 26,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 30,
+      "kind": "fire",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "hit",
+      "tick": 38,
+      "kind": "ice",
+      "target": "woody"
+    },
+    {
+      "move": "disaster",
+      "event": "fall",
+      "tick": 52,
+      "after_status": "burn",
+      "target": "davis"
+    },
+    {
+      "move": "disaster",
+      "event": "fall",
+      "tick": 76,
+      "after_status": "freeze",
+      "target": "woody"
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "freeze",
+      "tick": 8,
+      "target": "davis",
+      "x": 126
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "freeze",
+      "tick": 8,
+      "target": "woody",
+      "x": 166
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "burn_knockback",
+      "tick": 32,
+      "target": "davis",
+      "was_frozen": true,
+      "x": 126
+    },
+    {
+      "move": "arctic_volcano",
+      "event": "burn_knockback",
+      "tick": 32,
+      "target": "woody",
+      "was_frozen": true,
+      "x": 166
+    }
+  ],
+  "duration_ms": 16430
+}

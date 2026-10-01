@@ -1,0 +1,1040 @@
+{
+  "purpose": "offline LF1 combat mockup; gameplay not implemented",
+  "native_canvas": [
+    320,
+    180
+  ],
+  "preview_canvas": [
+    1280,
+    720
+  ],
+  "aspect_ratio": "16:9",
+  "scale": 4,
+  "background": "SYS/BACK31.GRH; 36 road rows inserted without rescaling",
+  "firzen": {
+    "name": "Firzen",
+    "skin": [
+      83,
+      81
+    ],
+    "shirt": [
+      66,
+      77
+    ],
+    "trousers": [
+      11,
+      10
+    ],
+    "hair": 98
+  },
+  "julian": {
+    "name": "Julian",
+    "head_id": 11,
+    "hair": 135,
+    "skin": [
+      10,
+      10
+    ],
+    "shirt": [
+      93,
+      94
+    ],
+    "trousers": [
+      119,
+      120
+    ]
+  },
+  "julian_frames": [
+    2,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "impact_source": "SYS/WEAPON.GRH",
+  "impact_frames": [
+    46,
+    47,
+    48
+  ],
+  "fps": 18.2,
+  "projectile_speed_pixels_per_second": 100.0,
+  "shot_interval_ticks": 3,
+  "hold_ms": 2000,
+  "hit_events": [
+    {
+      "tick": 13,
+      "time_ms": 714.2857142857143,
+      "shot_tick": 0
+    },
+    {
+      "tick": 17,
+      "time_ms": 934.0659340659341,
+      "shot_tick": 3
+    },
+    {
+      "tick": 20,
+      "time_ms": 1098.901098901099,
+      "shot_tick": 6
+    }
+  ],
+  "fall_tick": 20,
+  "timeline": [
+    {
+      "phase": "idle",
+      "elapsed_ms": 0,
+      "tick": 0,
+      "duration_ms": 450,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 0
+    },
+    {
+      "phase": "windup",
+      "elapsed_ms": 0,
+      "tick": 0,
+      "duration_ms": 180,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 35,
+      "visible_projectiles": 0
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 0.0,
+      "tick": 0,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 1
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 54.94505494505495,
+      "tick": 1,
+      "duration_ms": 60,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 1
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 109.8901098901099,
+      "tick": 2,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 1
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 164.83516483516485,
+      "tick": 3,
+      "duration_ms": 60,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 2
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 219.7802197802198,
+      "tick": 4,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 2
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 274.72527472527474,
+      "tick": 5,
+      "duration_ms": 60,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 2
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 329.6703296703297,
+      "tick": 6,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 3
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 384.61538461538464,
+      "tick": 7,
+      "duration_ms": 60,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 3
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 439.5604395604396,
+      "tick": 8,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 3
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 494.50549450549454,
+      "tick": 9,
+      "duration_ms": 60,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 549.4505494505495,
+      "tick": 10,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 604.3956043956044,
+      "tick": 11,
+      "duration_ms": 60,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 659.3406593406594,
+      "tick": 12,
+      "duration_ms": 50,
+      "julian_pose": 2,
+      "julian_position": [
+        188,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 714.2857142857143,
+      "tick": 13,
+      "duration_ms": 60,
+      "julian_pose": 14,
+      "julian_position": [
+        191,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 769.2307692307693,
+      "tick": 14,
+      "duration_ms": 50,
+      "julian_pose": 14,
+      "julian_position": [
+        191,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 824.1758241758242,
+      "tick": 15,
+      "duration_ms": 60,
+      "julian_pose": 15,
+      "julian_position": [
+        191,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 879.1208791208792,
+      "tick": 16,
+      "duration_ms": 50,
+      "julian_pose": 15,
+      "julian_position": [
+        191,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 934.0659340659341,
+      "tick": 17,
+      "duration_ms": 60,
+      "julian_pose": 14,
+      "julian_position": [
+        194,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 989.0109890109891,
+      "tick": 18,
+      "duration_ms": 50,
+      "julian_pose": 14,
+      "julian_position": [
+        194,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1043.956043956044,
+      "tick": 19,
+      "duration_ms": 60,
+      "julian_pose": 15,
+      "julian_position": [
+        194,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1098.901098901099,
+      "tick": 20,
+      "duration_ms": 50,
+      "julian_pose": 16,
+      "julian_position": [
+        197,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1153.8461538461538,
+      "tick": 21,
+      "duration_ms": 60,
+      "julian_pose": 16,
+      "julian_position": [
+        200,
+        110
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1208.7912087912089,
+      "tick": 22,
+      "duration_ms": 50,
+      "julian_pose": 16,
+      "julian_position": [
+        203,
+        107
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1263.7362637362637,
+      "tick": 23,
+      "duration_ms": 60,
+      "julian_pose": 17,
+      "julian_position": [
+        206,
+        105
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1318.6813186813188,
+      "tick": 24,
+      "duration_ms": 50,
+      "julian_pose": 17,
+      "julian_position": [
+        209,
+        107
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 6
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1373.6263736263736,
+      "tick": 25,
+      "duration_ms": 60,
+      "julian_pose": 17,
+      "julian_position": [
+        212,
+        110
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 6
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1428.5714285714287,
+      "tick": 26,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 6
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1483.5164835164835,
+      "tick": 27,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 7
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1538.4615384615386,
+      "tick": 28,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 7
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1593.4065934065934,
+      "tick": 29,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 7
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1648.3516483516485,
+      "tick": 30,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 8
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1703.2967032967033,
+      "tick": 31,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 8
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1758.2417582417584,
+      "tick": 32,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 8
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1813.1868131868132,
+      "tick": 33,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 9
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1868.1318681318683,
+      "tick": 34,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 9
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1923.076923076923,
+      "tick": 35,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 9
+    },
+    {
+      "phase": "hold",
+      "elapsed_ms": 1978.0219780219782,
+      "tick": 36,
+      "duration_ms": 20,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 43,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2000.0,
+      "tick": 36,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 35,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2054.945054945055,
+      "tick": 37,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 35,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2109.8901098901097,
+      "tick": 38,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 35,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2164.835164835165,
+      "tick": 39,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2219.78021978022,
+      "tick": 40,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2274.7252747252746,
+      "tick": 41,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2329.67032967033,
+      "tick": 42,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2384.6153846153848,
+      "tick": 43,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2439.5604395604396,
+      "tick": 44,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2494.5054945054944,
+      "tick": 45,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2549.4505494505493,
+      "tick": 46,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2604.3956043956046,
+      "tick": 47,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2659.3406593406594,
+      "tick": 48,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2714.285714285714,
+      "tick": 49,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 10
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2769.2307692307695,
+      "tick": 50,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 9
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2824.1758241758243,
+      "tick": 51,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 9
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2879.120879120879,
+      "tick": 52,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 9
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2934.065934065934,
+      "tick": 53,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 8
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 2989.010989010989,
+      "tick": 54,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 8
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3043.9560439560437,
+      "tick": 55,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 8
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3098.901098901099,
+      "tick": 56,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 7
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3153.846153846154,
+      "tick": 57,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 7
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3208.791208791209,
+      "tick": 58,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 7
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3263.736263736264,
+      "tick": 59,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 6
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3318.6813186813188,
+      "tick": 60,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 6
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3373.6263736263736,
+      "tick": 61,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 6
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3428.5714285714284,
+      "tick": 62,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3483.5164835164833,
+      "tick": 63,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3538.4615384615386,
+      "tick": 64,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 5
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3593.4065934065934,
+      "tick": 65,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3648.3516483516487,
+      "tick": 66,
+      "duration_ms": 50,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3703.2967032967035,
+      "tick": 67,
+      "duration_ms": 60,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 4
+    },
+    {
+      "phase": "release",
+      "elapsed_ms": 3758.2417582417584,
+      "tick": 68,
+      "duration_ms": 40,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 3
+    },
+    {
+      "phase": "pause",
+      "elapsed_ms": 3800,
+      "tick": 69,
+      "duration_ms": 700,
+      "julian_pose": 18,
+      "julian_position": [
+        215,
+        114
+      ],
+      "firzen_pose": 2,
+      "visible_projectiles": 3
+    }
+  ],
+  "projectile_hashes": {
+    "lead": "838d9c92eea42fbd036739df11124d45ccc871c1d1fcc4de1e1eb773ca30c4db",
+    "segment": "fc7558d1bb9935dd2438a3ed7bda37cf775697d290548b914ce84ea7fb747ded"
+  },
+  "palette_colors_exact": true,
+  "gif_duration_ms": 5130
+}

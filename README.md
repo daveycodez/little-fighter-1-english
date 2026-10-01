@@ -250,8 +250,9 @@ Each option is a `key=value` pair. Most are on/off flags where **`0` = off** and
 
 | Option | Default | Values | Description |
 | --- | :---: | :---: | --- |
+| `firzen` | `1` | `0` / `1` | Enable Firzen as a separate character. Julian unlocks also unlock Firzen; includes Cannon, Disaster and Polar Volcano. |
 | `unlock_julian` | `0` | `0` / `1` | Make Julian selectable from the character screen without having to press `F1` first. |
-| `balanced_julian` | `0` | `0` / `1` | Disable Julian's HP regeneration so he's fair in mirror matches / FFAs. |
+| `balanced_julian` | `0` | `0` / `1` | Disable passive HP regeneration for Julian and enabled Firzen. |
 | `free_run` | `0` | `0` / `1` | Running no longer drains MP. |
 | `free_jump` | `0` | `0` / `1` | Jumping no longer drains MP. |
 | `free_supers` | `0` | `0` / `1` | Special moves cost 0 MP. Overrides `cheap_supers`. |
